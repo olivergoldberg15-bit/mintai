@@ -5,6 +5,7 @@ import Mascot, { type Mood } from "./Mascot";
 import { VoiceIcon, StopIcon, CloseIcon } from "./Icons";
 import { recognitionCtor, pickVoice, speakable, type Recognition } from "@/lib/speech";
 import { save, type ChatMsg } from "@/lib/store";
+import { postJson } from "@/lib/api";
 
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
@@ -70,17 +71,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       setMsgs(history);
 
       try {
-        const res = await fetch("/api/tutor", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: history.map(({ role, content }) => ({ role, content })),
-            mode,
-            voice: true,
-          }),
+        const data = await postJson<{ reply: string }>("/api/tutor", {
+          messages: history.map(({ role, content }) => ({ role, content })),
+          mode,
+          voice: true,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "Something went wrong.");
 
         const all: ChatMsg[] = [...history, { role: "assistant", content: data.reply }];
         setMsgs(all);

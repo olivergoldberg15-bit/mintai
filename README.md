@@ -130,3 +130,9 @@ supabase/       schema
   doesn't support it; the app says so instead of breaking.
 - Free models are rate-limited. When one is busy the chain moves on, and if
   they're all busy your work stays on screen with a Retry button.
+
+## If the deployed site misbehaves
+
+Open `/api/health` on your deployed URL. It reports what that deployment
+actually has configured — no secret values, just what is present and what is
+missing — and names the fix for anything that isn't set.

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { list, save, remove, type Recap, type Term } from "@/lib/store";
 import { recognitionCtor, type Recognition } from "@/lib/speech";
+import { postJson } from "@/lib/api";
 import { PlusIcon, TrashIcon, CloseIcon, BackIcon, CheckIcon, VoiceIcon, StopIcon } from "./Icons";
 import Mascot from "./Mascot";
 
@@ -146,15 +147,14 @@ function Capture({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/study", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "recap", source: text }),
+      const data = await postJson<{ data?: Record<string, unknown> }>("/api/study", {
+        kind: "recap", source: text,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Couldn't build the recap.");
 
-      const d = data.data ?? {};
+      const d = (data.data ?? {}) as {
+        title?: string; summary?: string;
+        points?: string[]; terms?: unknown[]; todo?: string[];
+      };
       const recap = (await save("recaps", userId, {
         title: d.title || "Class notes",
         subject: null,

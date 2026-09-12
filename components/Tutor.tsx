@@ -5,6 +5,7 @@ import Markdown from "./Markdown";
 import Mascot from "./Mascot";
 import { SendIcon, VideoIcon, PlayIcon } from "./Icons";
 import { save, type ChatMsg, type TutorSession } from "@/lib/store";
+import { postJson } from "@/lib/api";
 
 type Video = { title: string; channel: string; why: string; url: string; thumb: string | null };
 
@@ -72,18 +73,15 @@ export default function Tutor({
       setError(null);
 
       try {
-        const res = await fetch("/api/tutor", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: history.map(({ role, content }) => ({ role, content })),
-            mode,
-            image,
-          }),
+        const data = await postJson<{
+          reply: string;
+          subject?: string | null;
+          problem?: string | null;
+        }>("/api/tutor", {
+          messages: history.map(({ role, content }) => ({ role, content })),
+          mode,
+          image,
         });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "Something went wrong.");
 
         // A scanned photo comes back as readable text — fold it into the first
         // user turn so follow-ups have context without re-sending the image.
@@ -138,13 +136,10 @@ export default function Tutor({
     if (!q) return;
     setVidBusy(true);
     try {
-      const res = await fetch("/api/videos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: q }),
-      });
-      const data = await res.json();
-      if (res.ok) setVideos(data.videos ?? []);
+      const data = await postJson<{ videos?: Video[] }>("/api/videos", { topic: q });
+      setVideos(data.videos ?? []);
+    } catch {
+      setVideos([]);
     } finally {
       setVidBusy(false);
     }

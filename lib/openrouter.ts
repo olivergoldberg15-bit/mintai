@@ -16,6 +16,15 @@
 
 const API = "https://openrouter.ai/api/v1/chat/completions";
 
+/**
+ * Vercel caps a serverless function at 60s, and a killed function returns the
+ * platform's error page rather than ours. Keep the entire fallback chain inside
+ * that, leaving headroom for the response to be written.
+ */
+const TOTAL_BUDGET_MS = 50_000;
+const PER_MODEL_MS = 24_000;
+const MIN_ATTEMPT_MS = 6_000;
+
 const DEFAULT_TEXT = [
   "openrouter/free",
   "nvidia/nemotron-3-super-120b-a12b:free",
@@ -159,11 +168,20 @@ export async function complete(
     json: opts.json ?? false,
   };
 
+  // The whole chain has to finish inside the serverless function's limit.
+  // Overrun it and the platform kills the request and returns its own error
+  // page, so the friendly JSON below never reaches the browser.
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
   let last: TutorError | null = null;
 
   for (const model of models) {
-    // Free models are slow when busy; cap each attempt so the chain keeps moving.
-    const timer = AbortSignal.timeout(55_000);
+    const remaining = deadline - Date.now();
+    // Not enough time left to be worth starting another attempt.
+    if (remaining < MIN_ATTEMPT_MS) break;
+
+    // Free models are slow when busy; cap each attempt so the chain keeps
+    // moving, and never let one attempt eat the whole budget.
+    const timer = AbortSignal.timeout(Math.min(PER_MODEL_MS, remaining));
     try {
       const text = await callModel(model, messages, { ...settings, signal: timer });
       return { text, model };

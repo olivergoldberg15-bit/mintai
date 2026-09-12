@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { list, save, remove, type Deck, type Card } from "@/lib/store";
+import { postJson } from "@/lib/api";
 import { PlusIcon, TrashIcon, CloseIcon, BackIcon } from "./Icons";
 import Mascot from "./Mascot";
 
@@ -89,15 +90,11 @@ function MakeSheet({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/study", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "cards", source: notes, count }),
+      const data = await postJson<{ data?: { cards?: Card[] } }>("/api/study", {
+        kind: "cards", source: notes, count,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Couldn't make cards.");
 
-      const cards = (data.data?.cards ?? []) as Card[];
+      const cards = data.data?.cards ?? [];
       if (!cards.length) throw new Error("Nothing came back — try more detailed notes.");
 
       const deck = (await save("decks", userId, {

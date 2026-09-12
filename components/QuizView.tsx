@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { list, save, remove, type Quiz, type Question } from "@/lib/store";
+import { postJson } from "@/lib/api";
 import { PlusIcon, TrashIcon, CloseIcon, BackIcon } from "./Icons";
 import Mascot from "./Mascot";
 
@@ -98,16 +99,12 @@ function MakeSheet({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/study", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "quiz", source: notes, count }),
+      const data = await postJson<{ data?: { questions?: Question[] } }>("/api/study", {
+        kind: "quiz", source: notes, count,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Couldn't build the quiz.");
 
       // Drop anything malformed rather than crashing mid-quiz.
-      const questions = ((data.data?.questions ?? []) as Question[]).filter(
+      const questions = (data.data?.questions ?? []).filter(
         (q) =>
           q && typeof q.q === "string" &&
           Array.isArray(q.options) && q.options.length >= 2 &&
