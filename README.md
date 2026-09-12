@@ -71,11 +71,11 @@ signing in later pushes it up to your account once.
 ## Deploying to Vercel
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import
-   `stacysolovyev-prog/mintai`.
-2. Pick branch `claude/modest-babbage-7jk5sw` (or merge it to `main` first).
-3. Add the environment variables from `.env.example`. At minimum
+   `stacysolovyev-prog/mintai`. `claude/modest-babbage-7jk5sw` is the repo's
+   default branch, so it is selected for you.
+2. Add the environment variables from `.env.example`. At minimum
    `OPENROUTER_API_KEY`.
-4. Deploy. Then set `NEXT_PUBLIC_SITE_URL` to the URL Vercel gives you and
+3. Deploy. Then set `NEXT_PUBLIC_SITE_URL` to the URL Vercel gives you and
    redeploy so OAuth redirects land in the right place.
 
 Nothing else to configure — Next.js is detected automatically.
