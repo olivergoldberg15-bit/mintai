@@ -131,6 +131,17 @@ supabase/       schema
 - Free models are rate-limited. When one is busy the chain moves on, and if
   they're all busy your work stays on screen with a Retry button.
 
+## Finding your deployed URL
+
+The URL comes from your **Vercel project name**, not from the app's name. This
+project deploys as `mintai`, so it lives at `mintai.vercel.app` — not
+`tutor-mint.vercel.app`. The exact URL is on the project page at
+[vercel.com/stacysolovyev-prog/mintai](https://vercel.com/stacysolovyev-prog/mintai).
+
+A `404: NOT_FOUND` with a code like `iad1::...` means you reached Vercel but
+asked for a hostname or path it does not serve — usually the wrong project
+name, or a route that the currently deployed commit predates.
+
 ## If the deployed site misbehaves
 
 Open `/api/health` on your deployed URL. It reports what that deployment
