@@ -1,17 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <defs>
-    <linearGradient id="g" x1="20%" y1="5%" x2="85%" y2="95%">
-      <stop offset="0%" stop-color="#7FE3C2"/>
-      <stop offset="50%" stop-color="#3FC79F"/>
-      <stop offset="100%" stop-color="#169B78"/>
-    </linearGradient>
-  </defs>
-  <rect width="120" height="120" rx="27" fill="#F4F9F7"/>
-  <path d="M63 20c18 6 31 21 31 39 0 20-15 35-34 35-18 0-32-13-32-31 0-21 16-37 35-43Z" fill="url(#g)"/>
-  <path d="M62 88c-4-17-3-37 4-61" stroke="#0F8A6B" stroke-width="2.6" stroke-linecap="round" stroke-opacity=".55" fill="none"/>
-  <ellipse cx="48" cy="57" rx="5.6" ry="6.3" fill="#0D2B23"/>
-  <ellipse cx="74" cy="55" rx="5.6" ry="6.3" fill="#0D2B23"/>
-  <circle cx="50" cy="54.4" r="2.1" fill="#fff"/>
-  <circle cx="76" cy="52.4" r="2.1" fill="#fff"/>
-  <path d="M53 71q8 6 15-1" stroke="#0D2B23" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <rect width="120" height="120" rx="27" fill="#FFFFFF"/>
+  <rect width="120" height="120" rx="27" fill="none" stroke="#E3EAE7" stroke-width="2"/>
+  <path d="M64 22c26 8.8 42 29 42 51 0 24-19.4 41-43.4 41-23.1 0-40.6-16.2-40.6-38.8C22 49.4 41.8 29.6 64 22Z" fill="#12795F"/>
+  <path d="M63 112c-5.1-21.2-3.7-47.1 5.1-76.6" stroke="#fff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
 </svg>

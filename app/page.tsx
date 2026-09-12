@@ -6,7 +6,7 @@ import ScanTab from "@/components/ScanTab";
 import VoiceTab from "@/components/VoiceTab";
 import StudyTab from "@/components/StudyTab";
 import ProfileTab from "@/components/ProfileTab";
-import Mascot from "@/components/Mascot";
+import Wordmark from "@/components/Wordmark";
 import { ScanIcon, ChatIcon, VoiceIcon, StudyIcon, YouIcon } from "@/components/Icons";
 import { useAuth } from "@/lib/useAuth";
 
@@ -30,9 +30,8 @@ export default function Page() {
   return (
     <div className="app">
       <header className="topbar">
-        <Mascot mood={tab === "voice" ? "happy" : "idle"} size={34} />
-        <div className="grow col">
-          <h1>Tutor Mint</h1>
+        <div className="grow col" style={{ gap: 3 }}>
+          <Wordmark size={21} />
           <span className="sub">{current.sub}</span>
         </div>
       </header>

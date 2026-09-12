@@ -97,13 +97,21 @@ export default function TasksView({ userId }: { userId: string | null }) {
     <>
       <div className="card">
         <div className="row-between">
-          <button className="btn sm ghost" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}>
+          <button
+            className="btn icon ghost"
+            aria-label="Previous month"
+            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+          >
             ‹
           </button>
-          <h3 style={{ fontSize: 15.5 }}>
+          <h3 className="cal-month">
             {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
           </h3>
-          <button className="btn sm ghost" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}>
+          <button
+            className="btn icon ghost"
+            aria-label="Next month"
+            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+          >
             ›
           </button>
         </div>
