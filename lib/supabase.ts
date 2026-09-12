@@ -1,22 +1,17 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, CLOUD_ENABLED } from "./config";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-/**
- * Supabase is optional. With keys set you get real accounts and sync across
- * devices; without them the app still works and keeps everything on the device.
- */
-export const cloudEnabled = Boolean(url && anon);
+/** Accounts and sync are available whenever both values resolve. */
+export const cloudEnabled = CLOUD_ENABLED;
 
 let client: SupabaseClient | null = null;
 
 export function supabase(): SupabaseClient | null {
   if (!cloudEnabled) return null;
   if (!client) {
-    client = createClient(url!, anon!, {
+    client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,

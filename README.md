@@ -58,15 +58,23 @@ npm run dev
 | Variable | Needed | What it does |
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | yes | The tutor brain. Server-side only. |
-| `NEXT_PUBLIC_SUPABASE_URL` | no | Accounts and sync. |
+| `NEXT_PUBLIC_SUPABASE_URL` | no | Accounts and sync. Ships with a working default. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | no | Same. Public by design; RLS protects the data. |
 | `NEXT_PUBLIC_SITE_URL` | no | OAuth redirects and OpenRouter attribution. |
 | `OPENROUTER_TEXT_MODELS` | no | Override the text fallback chain. |
 | `OPENROUTER_VISION_MODELS` | no | Override the vision fallback chain. |
 | `YOUTUBE_API_KEY` | no | Real video results with thumbnails instead of search links. |
 
-**Without Supabase the app still works.** Everything saves to the device, and
-signing in later pushes it up to your account once.
+**Only `OPENROUTER_API_KEY` has to be set.** It is the one real secret, so it
+lives server-side and is never bundled. The Supabase values ship as committed
+defaults in `lib/config.ts` — they are `NEXT_PUBLIC_`, so they are compiled into
+the browser bundle and served to every visitor regardless of where they are
+configured, and the anon key grants nothing on its own. Row-level security is
+the boundary: every table is scoped to `auth.uid()`, and an anonymous reader
+sees zero rows.
+
+If Supabase is ever unreachable the app still works — everything saves to the
+device, and signing in later pushes it up once.
 
 ## Deploying to Vercel
 

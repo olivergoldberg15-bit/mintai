@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CLOUD_ENABLED, SUPABASE_FROM_ENV, SUPABASE_URL } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,8 +11,6 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const key = process.env.OPENROUTER_API_KEY ?? "";
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
   const checks = {
     tutor: {
@@ -24,18 +23,18 @@ export async function GET() {
         : "MISSING — Scan, Chat and Voice will not work. Add OPENROUTER_API_KEY.",
     },
     accounts: {
-      supabase_url_set: Boolean(url),
-      supabase_anon_key_set: Boolean(anon),
-      status:
-        url && anon
-          ? "ready"
-          : "not configured — the app runs on-device only, with no sign-in or sync",
+      configured: CLOUD_ENABLED,
+      project: SUPABASE_URL || null,
+      source: SUPABASE_FROM_ENV ? "environment variables" : "built-in defaults",
+      status: CLOUD_ENABLED
+        ? "ready"
+        : "not configured — the app runs on-device only, with no sign-in or sync",
     },
     site_url: {
       value: process.env.NEXT_PUBLIC_SITE_URL || null,
-      status: process.env.NEXT_PUBLIC_SITE_URL
-        ? "set"
-        : "not set — Google sign-in redirects may land on the wrong URL",
+      // Sign-in redirects use window.location.origin at runtime, so this is
+      // only used for OpenRouter attribution. Optional either way.
+      status: process.env.NEXT_PUBLIC_SITE_URL ? "set" : "not set — optional",
     },
     models: {
       text: (process.env.OPENROUTER_TEXT_MODELS ?? "built-in chain").split(",")[0],
