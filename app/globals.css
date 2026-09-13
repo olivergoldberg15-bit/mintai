@@ -651,6 +651,31 @@ label.field > span {
   font-weight: 500;
 }
 
+.setup {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--r-md);
+  background: #FFF8E8;
+  border: 1px solid #F0DCA8;
+  color: #6B5210;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.setup strong { color: #4D3A06; font-weight: 750; }
+.setup-x {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #6B5210;
+  font-size: 12px;
+  opacity: .6;
+}
+.setup-x:hover { opacity: 1; background: rgba(0,0,0,.05); }
+
 .empty { text-align: center; padding: 22px 18px; color: var(--ink-3); }
 
 /* For screens whose whole job is one choice — fill the viewport and centre,

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Mascot, { type Mood } from "./Mascot";
 import { VoiceIcon, StopIcon, CloseIcon } from "./Icons";
 import { recognitionCtor, pickVoice, speakable, type Recognition } from "@/lib/speech";
 import { save, type ChatMsg } from "@/lib/store";
@@ -155,10 +154,6 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
     try { rec.start(); } catch { /* already started */ }
   }, [ask]);
 
-  const mood: Mood =
-    phase === "thinking" ? "think" : phase === "speaking" ? "happy" :
-    phase === "listening" ? "idle" : msgs.length ? "idle" : "sleep";
-
   const label =
     phase === "listening" ? "Listening" :
     phase === "thinking" ? "Thinking" :
@@ -168,7 +163,6 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
   if (!supported) {
     return (
       <div className="card center">
-        <Mascot mood="oops" size={92} />
         <h2 className="mt12" style={{ fontSize: 18 }}>Voice needs a different browser</h2>
         <p className="small muted mt8">
           Speech recognition works in Safari on iPhone and Chrome on Android and desktop.
@@ -186,7 +180,6 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       </div>
 
       <div className="card center mt16">
-        <Mascot mood={mood} size={72} />
 
         <button
           className={`orb mt16 ${phase === "listening" ? "live" : ""} ${phase === "speaking" ? "off" : ""}`}

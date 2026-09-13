@@ -7,6 +7,7 @@ import VoiceTab from "@/components/VoiceTab";
 import StudyTab from "@/components/StudyTab";
 import ProfileTab from "@/components/ProfileTab";
 import Wordmark from "@/components/Wordmark";
+import SetupBanner from "@/components/SetupBanner";
 import { ScanIcon, ChatIcon, VoiceIcon, StudyIcon, YouIcon } from "@/components/Icons";
 import { useAuth } from "@/lib/useAuth";
 
@@ -37,6 +38,7 @@ export default function Page() {
       </header>
 
       <main className="main">
+        <SetupBanner />
         {!ready && cloudEnabled ? (
           <div className="empty">
             <span className="spin dark" style={{ margin: "0 auto" }} />

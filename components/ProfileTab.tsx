@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import AuthView from "./AuthView";
-import Mascot from "./Mascot";
 import { supabase } from "@/lib/supabase";
 import { list, saveProfile, type Profile, type Deck, type Quiz, type Task, type TutorSession } from "@/lib/store";
 import { ImageIcon } from "./Icons";
@@ -170,7 +169,6 @@ export default function ProfileTab({
         <AuthView />
       ) : (
         <div className="card center">
-          <Mascot mood="idle" size={88} />
           <h2 className="mt12" style={{ fontSize: 18 }}>Working on this device</h2>
           <p className="small muted mt8">
             Accounts aren&apos;t switched on for this deployment. Everything still saves locally.

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { GoogleIcon } from "./Icons";
-import Mascot from "./Mascot";
 
 export default function AuthView() {
   const [mode, setMode] = useState<"in" | "up">("in");
@@ -70,7 +69,6 @@ export default function AuthView() {
   if (sent) {
     return (
       <div className="card center">
-        <Mascot mood="happy" size={88} />
         <h2 className="mt12" style={{ fontSize: 18 }}>Check your email</h2>
         <p className="small muted mt8">
           We sent a confirmation link to {email}. Open it and you&apos;re in.
@@ -84,7 +82,6 @@ export default function AuthView() {
   return (
     <>
       <div className="card center">
-        <Mascot mood="idle" size={88} />
         <h2 className="mt12" style={{ fontSize: 19 }}>
           {mode === "in" ? "Sign in" : "Make an account"}
         </h2>

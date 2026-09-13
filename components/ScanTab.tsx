@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Tutor from "./Tutor";
-import Mascot from "./Mascot";
 import { CameraIcon, ImageIcon, CloseIcon } from "./Icons";
 
 /** Downscale before upload — free vision models choke on full-res phone photos. */
@@ -126,7 +125,6 @@ export default function ScanTab({ userId }: { userId: string | null }) {
       ) : (
         <div className="fill-center">
           <div className="card center">
-            <Mascot mood="idle" size={80} />
             <h2 className="mt12" style={{ fontSize: 17 }}>Scan a problem</h2>
             <p className="small muted mt8" style={{ maxWidth: 300, margin: "8px auto 0" }}>
               Point at the question. You&apos;ll get the questions that get you there — not the answer.

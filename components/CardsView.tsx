@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { list, save, remove, type Deck, type Card } from "@/lib/store";
 import { postJson } from "@/lib/api";
 import { PlusIcon, TrashIcon, CloseIcon, BackIcon } from "./Icons";
-import Mascot from "./Mascot";
 
 export default function CardsView({ userId }: { userId: string | null }) {
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -27,7 +26,6 @@ export default function CardsView({ userId }: { userId: string | null }) {
       ) : decks.length === 0 ? (
         <div className="card">
           <div className="empty">
-            <Mascot mood="idle" size={80} />
             <h3 className="mt12">No cards yet</h3>
             <p>Paste your notes and get a deck back.</p>
           </div>

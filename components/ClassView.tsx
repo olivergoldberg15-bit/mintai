@@ -5,7 +5,6 @@ import { list, save, remove, type Recap, type Term } from "@/lib/store";
 import { recognitionCtor, type Recognition } from "@/lib/speech";
 import { postJson } from "@/lib/api";
 import { PlusIcon, TrashIcon, CloseIcon, BackIcon, CheckIcon, VoiceIcon, StopIcon } from "./Icons";
-import Mascot from "./Mascot";
 
 export default function ClassView({ userId }: { userId: string | null }) {
   const [recaps, setRecaps] = useState<Recap[]>([]);
@@ -26,7 +25,6 @@ export default function ClassView({ userId }: { userId: string | null }) {
       ) : recaps.length === 0 ? (
         <div className="card">
           <div className="empty">
-            <Mascot mood="idle" size={80} />
             <h3 className="mt12">No class notes yet</h3>
             <p>Record the lesson or paste your notes, and get a recap you can revise from.</p>
           </div>
