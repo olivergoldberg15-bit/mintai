@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VoiceIcon, StopIcon, CloseIcon } from "./Icons";
+import Orb from "./Orb";
+import { speak as speakOut, type Speaker } from "@/lib/voiceOut";
 import {
   recognitionCtor, pickVoice, rankedVoices, loadVoices, speakNaturally,
   type Recognition,
@@ -22,6 +24,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI, setVoiceURI] = useState<string | null>(null);
+  const [engine, setEngine] = useState<"elevenlabs" | "browser" | null>(null);
+
+  // Live audio amplitude, 0..1 — read by the orb in its own rAF loop.
+  const levelRef = useRef(0);
+  const speakerRef = useRef<Speaker | null>(null);
 
   const recRef = useRef<Recognition | null>(null);
   const stopSpeechRef = useRef<(() => void) | null>(null);
@@ -56,8 +63,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
   const stopAll = useCallback(() => {
     recRef.current?.abort();
     recRef.current = null;
+    speakerRef.current?.stop();
+    speakerRef.current = null;
     stopSpeechRef.current?.();
     stopSpeechRef.current = null;
+    levelRef.current = 0;
     window.speechSynthesis?.cancel();
     setPhase("idle");
     setHeard("");
@@ -69,7 +79,25 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
     (text: string, then: () => void) => {
       const voice = voices.find((v) => v.voiceURI === voiceURI) ?? null;
       setPhase("speaking");
-      stopSpeechRef.current = speakNaturally(text, voice, { onDone: then });
+
+      speakerRef.current?.stop();
+      const speaker = speakOut(text, {
+        voice,
+        onEngine: setEngine,
+        onDone: () => { levelRef.current = 0; then(); },
+      });
+      speakerRef.current = speaker;
+      levelRef.current = 0;
+
+      // Mirror the speaker's level into the ref the orb watches.
+      const pump = () => {
+        if (speakerRef.current !== speaker) return;
+        levelRef.current = speaker.level.current;
+        requestAnimationFrame(pump);
+      };
+      pump();
+
+      stopSpeechRef.current = () => speaker.stop();
     },
     [voices, voiceURI],
   );
@@ -194,27 +222,28 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
       <div className="card center mt16">
 
-        <button
-          className={`orb mt16 ${phase === "listening" ? "live" : ""} ${phase === "speaking" ? "off" : ""}`}
+        <Orb
+          state={phase}
+          levelRef={levelRef}
+          label={label}
           onClick={() => {
             if (phase === "idle") startListening();
             else if (phase === "speaking") {
-              stopSpeechRef.current?.();
-              stopSpeechRef.current = null;
+              speakerRef.current?.stop();
+              speakerRef.current = null;
+              levelRef.current = 0;
               setPhase("idle");
-            }
-            else stopAll();
+            } else stopAll();
           }}
-          aria-label={label}
         >
           {phase === "idle" ? <VoiceIcon /> : <StopIcon />}
-        </button>
+        </Orb>
 
         <p className="mt16" style={{ fontWeight: 620 }}>{label}</p>
         {heard && <p className="small muted mt8">&ldquo;{heard}&rdquo;</p>}
         {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
 
-        {voices.length > 1 && (
+        {engine === "browser" && voices.length > 1 && (
           <label className="field mt20" style={{ textAlign: "left" }}>
             <span>Voice</span>
             <select

@@ -14,8 +14,12 @@ asking.
 **Chat** — same thing, typed.
 
 **Voice** — hands-free back-and-forth. It listens, answers out loud, and keeps
-listening. Replies stay under 60 words so it sounds like a person, not a
-textbook.
+listening. Replies stay short so it sounds like a person, not a textbook.
+
+With `ELEVENLABS_API_KEY` set it speaks in a real neural voice; without it the
+device's own voice is used, ranked to avoid the robotic ones. The orb is driven
+by the actual audio — its amplitude is read through a Web Audio analyser, so it
+moves with the syllables rather than on a timer.
 
 **Guide vs Explain** — Guide asks the questions. Explain teaches the idea (and
 still won't do your homework). Both are one tap apart everywhere.
@@ -63,6 +67,8 @@ npm run dev
 | `NEXT_PUBLIC_SITE_URL` | no | OAuth redirects and OpenRouter attribution. |
 | `OPENROUTER_TEXT_MODELS` | no | Override the text fallback chain. |
 | `OPENROUTER_VISION_MODELS` | no | Override the vision fallback chain. |
+| `ELEVENLABS_API_KEY` | no | Natural voice. Without it, the browser's own voice is used. |
+| `ELEVENLABS_VOICE_ID` | no | Which ElevenLabs voice. Defaults to a warm, unhurried one. |
 | `YOUTUBE_API_KEY` | no | Real video results with thumbnails instead of search links. |
 
 **Only `OPENROUTER_API_KEY` has to be set.** It is the one real secret, so it

@@ -616,25 +616,168 @@ label.field > span {
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-/* ---------- Voice ---------- */
+/* ---------- Voice orb ---------- */
 
 .orb {
-  width: 132px; height: 132px;
+  position: relative;
+  width: 210px;
+  height: 210px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   margin: 0 auto;
-  background: var(--g-600);
-  color: var(--white);
-  transition: transform .18s ease, background .18s ease;
+  isolation: isolate;
+  background: none;
+  /* --lvl (0..1) is written by the rAF loop in Orb.tsx */
+  transform: scale(calc(1 + var(--lvl, 0) * 0.085));
+  transition: transform .06s linear;
+  box-shadow:
+    0 18px 50px -18px rgba(6, 51, 42, calc(0.45 + var(--lvl, 0) * 0.4)),
+    0 0 calc(30px + var(--lvl, 0) * 60px) rgba(18, 121, 95, calc(var(--lvl, 0) * 0.5));
 }
-.orb svg { width: 46px; height: 46px; }
-.orb:active { transform: scale(.96); }
-.orb.live { animation: pulse 1.6s infinite ease-in-out; }
-.orb.off { background: var(--black); }
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(18, 121, 95, .34); }
-  55%      { box-shadow: 0 0 0 24px rgba(18, 121, 95, 0); }
+
+.orb-skin {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  /* Dark ground so the light masses and the grain both read. */
+  background: radial-gradient(115% 115% at 44% 40%, #0A4436 0%, #04211B 58%, #010C0A 100%);
+}
+
+/* Colour masses, like ink suspended in water. Kept distinct rather than
+   blurred into one tone — the mottling is the whole look. */
+.orb-blob {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+/* pale mint rim, upper left */
+.orb-blob.b1 {
+  width: 92%; height: 80%;
+  left: -22%; top: -14%;
+  background: radial-gradient(circle at 50% 50%, #B6F3DE 0%, #4FD0AC 38%, rgba(79,208,172,0) 70%);
+  filter: blur(16px);
+  opacity: calc(0.82 + var(--lvl, 0) * 0.18);
+  animation: drift1 14s ease-in-out infinite;
+}
+
+/* mid teal mass, right */
+.orb-blob.b2 {
+  width: 78%; height: 92%;
+  right: -20%; top: -10%;
+  background: radial-gradient(circle at 50% 50%, #24B48F 0%, #0E6A55 42%, rgba(14,106,85,0) 72%);
+  filter: blur(18px);
+  opacity: calc(0.75 + var(--lvl, 0) * 0.25);
+  animation: drift2 18s ease-in-out infinite;
+}
+
+/* near-black mass sweeping the lower middle */
+.orb-blob.b3 {
+  width: 105%; height: 78%;
+  left: -4%; bottom: -20%;
+  background: radial-gradient(circle at 50% 45%, #01100C 0%, #02150F 40%, rgba(2,21,15,0) 72%);
+  filter: blur(20px);
+  opacity: .92;
+  animation: drift3 16s ease-in-out infinite;
+}
+
+/* bright highlight that swells with the voice */
+.orb-blob.b4 {
+  width: 62%; height: 58%;
+  left: 10%; top: 42%;
+  background: radial-gradient(circle at 50% 50%, #7FE3C2 0%, rgba(127,227,194,0) 62%);
+  filter: blur(22px);
+  opacity: calc(0.18 + var(--lvl, 0) * 0.62);
+  animation: drift4 11s ease-in-out infinite;
+}
+
+.orb-grain {
+  position: absolute;
+  inset: -25%;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%274%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27220%27%20height%3D%27220%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
+  background-size: 200px 200px;
+  opacity: .55;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: grainshift 5s steps(5) infinite;
+}
+
+/* Sphere shaping: a light catch top-left, and a soft terminator, both gentle
+   enough to leave the mottling visible. */
+.orb-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(46% 38% at 30% 18%, rgba(255,255,255,.34), rgba(255,255,255,0) 70%),
+    radial-gradient(120% 120% at 42% 36%, rgba(0,0,0,0) 52%, rgba(0,0,0,.5) 100%);
+  pointer-events: none;
+}
+
+.orb-icon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  filter: drop-shadow(0 2px 8px rgba(4, 29, 24, .55));
+}
+.orb-icon svg { width: 46px; height: 46px; }
+
+/* Breathing when idle; faster and wider while listening. */
+.orb-idle .orb-skin      { animation: breathe 5.5s ease-in-out infinite; }
+.orb-listening .orb-skin { animation: breathe 2.1s ease-in-out infinite; }
+.orb-thinking .orb-skin  { animation: breathe 1.3s ease-in-out infinite; }
+.orb-speaking .orb-skin  { animation: none; }
+
+.orb-listening { box-shadow:
+  0 18px 50px -18px rgba(6,51,42,.5),
+  0 0 0 0 rgba(18,121,95,.4);
+  animation: ring 2.1s ease-out infinite; }
+
+@keyframes ring {
+  0%   { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 0 rgba(18,121,95,.45); }
+  70%  { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 28px rgba(18,121,95,0); }
+  100% { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 0 rgba(18,121,95,0); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+
+@keyframes drift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(14%, 10%) scale(1.12); }
+  66%      { transform: translate(-8%, 16%) scale(.94); }
+}
+@keyframes drift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-16%, 14%) scale(1.1); }
+  75%      { transform: translate(6%, -10%) scale(.92); }
+}
+@keyframes drift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-12%, -14%) scale(1.14); }
+}
+@keyframes drift4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(12%, -12%) scale(1.2); }
+}
+
+@keyframes grainshift {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-4%, 3%); }
+  40%  { transform: translate(3%, -4%); }
+  60%  { transform: translate(-3%, -2%); }
+  80%  { transform: translate(4%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb, .orb-skin, .orb-blob, .orb-grain { animation: none !important; transform: none !important; }
 }
 
 /* ---------- Misc ---------- */
