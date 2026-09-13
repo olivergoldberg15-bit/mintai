@@ -25,22 +25,27 @@ const TOTAL_BUDGET_MS = 50_000;
 const PER_MODEL_MS = 24_000;
 const MIN_ATTEMPT_MS = 6_000;
 
+// Verified general-purpose models first. `openrouter/free` sits LAST on
+// purpose: it is a meta-router that picks any free model, including
+// domain-specific ones (…-sante is health, …-fin is finance) that are wrong
+// for tutoring and have been observed returning empty content. Leading with
+// it meant every request gambled its first — and slowest — attempt.
 const DEFAULT_TEXT = [
-  "openrouter/free",
   "nvidia/nemotron-3-super-120b-a12b:free",
   "nvidia/nemotron-3.5-lightning:free",
   "google/gemma-4-31b-it:free",
   "nex-agi/nex-n2.5-pro:free",
   "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "openrouter/free",
 ];
 
 const DEFAULT_VISION = [
-  "openrouter/free",
   "inclusionai/ling-3.0-flash-vl:free",
   "google/gemma-4-31b-it:free",
   "nex-agi/nex-n2.5-pro:free",
   "thinkingmachines/inkling:free",
   "dots-studio/dots-3-note-preview:free",
+  "openrouter/free",
 ];
 
 function chain(envVar: string, fallback: string[]): string[] {
