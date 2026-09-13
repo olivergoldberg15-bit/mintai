@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VoiceIcon, StopIcon, CloseIcon } from "./Icons";
-import { recognitionCtor, pickVoice, speakable, type Recognition } from "@/lib/speech";
+import {
+  recognitionCtor, pickVoice, rankedVoices, loadVoices, speakNaturally,
+  type Recognition,
+} from "@/lib/speech";
 import { save, type ChatMsg } from "@/lib/store";
 import { postJson } from "@/lib/api";
 
@@ -17,7 +20,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(true);
 
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voiceURI, setVoiceURI] = useState<string | null>(null);
+
   const recRef = useRef<Recognition | null>(null);
+  const stopSpeechRef = useRef<(() => void) | null>(null);
   const finalRef = useRef("");
   const msgsRef = useRef<ChatMsg[]>([]);
   const sessionId = useRef<string | null>(null);
@@ -30,13 +37,27 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
   useEffect(() => {
     setSupported(recognitionCtor() !== null);
-    // Voice lists load async in most browsers; touching it early warms the cache.
-    window.speechSynthesis?.getVoices();
+
+    // The voice list arrives asynchronously. Waiting for it is the difference
+    // between a neural voice and the browser's robotic default.
+    let alive = true;
+    loadVoices().then((all) => {
+      if (!alive) return;
+      const ranked = rankedVoices(all, navigator.language || "en-US");
+      setVoices(ranked);
+      let saved: string | null = null;
+      try { saved = window.localStorage.getItem("tm.voice"); } catch { /* ignore */ }
+      const chosen = pickVoice(all, saved, navigator.language || "en-US");
+      if (chosen) setVoiceURI(chosen.voiceURI);
+    });
+    return () => { alive = false; };
   }, []);
 
   const stopAll = useCallback(() => {
     recRef.current?.abort();
     recRef.current = null;
+    stopSpeechRef.current?.();
+    stopSpeechRef.current = null;
     window.speechSynthesis?.cancel();
     setPhase("idle");
     setHeard("");
@@ -44,22 +65,14 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
   useEffect(() => stopAll, [stopAll]);
 
-  const speak = useCallback((text: string, then: () => void) => {
-    const synth = window.speechSynthesis;
-    if (!synth) return then();
-
-    synth.cancel();
-    const utter = new SpeechSynthesisUtterance(speakable(text));
-    const voice = pickVoice();
-    if (voice) utter.voice = voice;
-    utter.rate = 1.0;
-    utter.pitch = 1.05;
-    utter.onend = then;
-    utter.onerror = then;
-
-    setPhase("speaking");
-    synth.speak(utter);
-  }, []);
+  const speak = useCallback(
+    (text: string, then: () => void) => {
+      const voice = voices.find((v) => v.voiceURI === voiceURI) ?? null;
+      setPhase("speaking");
+      stopSpeechRef.current = speakNaturally(text, voice, { onDone: then });
+    },
+    [voices, voiceURI],
+  );
 
   const ask = useCallback(
     async (text: string) => {
@@ -185,7 +198,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
           className={`orb mt16 ${phase === "listening" ? "live" : ""} ${phase === "speaking" ? "off" : ""}`}
           onClick={() => {
             if (phase === "idle") startListening();
-            else if (phase === "speaking") { window.speechSynthesis?.cancel(); setPhase("idle"); }
+            else if (phase === "speaking") {
+              stopSpeechRef.current?.();
+              stopSpeechRef.current = null;
+              setPhase("idle");
+            }
             else stopAll();
           }}
           aria-label={label}
@@ -196,6 +213,33 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
         <p className="mt16" style={{ fontWeight: 620 }}>{label}</p>
         {heard && <p className="small muted mt8">&ldquo;{heard}&rdquo;</p>}
         {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
+
+        {voices.length > 1 && (
+          <label className="field mt20" style={{ textAlign: "left" }}>
+            <span>Voice</span>
+            <select
+              className="input"
+              value={voiceURI ?? ""}
+              onChange={(e) => {
+                setVoiceURI(e.target.value);
+                try { window.localStorage.setItem("tm.voice", e.target.value); } catch { /* ignore */ }
+                // Say a line in the new voice so the choice is audible.
+                const v = voices.find((x) => x.voiceURI === e.target.value) ?? null;
+                stopSpeechRef.current?.();
+                stopSpeechRef.current = speakNaturally("Okay. Where did you get to?", v);
+              }}
+            >
+              {voices.map((v) => (
+                <option key={v.voiceURI} value={v.voiceURI}>
+                  {v.name.replace(/\s*\([^)]*\)\s*$/, "")}
+                </option>
+              ))}
+            </select>
+            <span className="tiny muted" style={{ fontWeight: 500, marginTop: 6, display: "block" }}>
+              Best first. The most natural ones need a connection.
+            </span>
+          </label>
+        )}
 
         <label className="row mt16" style={{ justifyContent: "center", gap: 8, fontSize: 13.5 }}>
           <input
