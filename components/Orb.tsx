@@ -17,13 +17,11 @@ export default function Orb({
   levelRef,
   onClick,
   label,
-  children,
 }: {
   state: State;
   levelRef: { current: number };
   onClick: () => void;
   label: string;
-  children?: React.ReactNode;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
 
@@ -66,10 +64,10 @@ export default function Orb({
         <span className="orb-blob b2" />
         <span className="orb-blob b3" />
         <span className="orb-blob b4" />
+        <span className="orb-blob b5" />
         <span className="orb-grain" />
         <span className="orb-sheen" />
       </span>
-      <span className="orb-icon">{children}</span>
     </button>
   );
 }

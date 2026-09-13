@@ -1,13 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { VoiceIcon, StopIcon, CloseIcon } from "./Icons";
+import { CloseIcon } from "./Icons";
 import Orb from "./Orb";
 import { speak as speakOut, type Speaker } from "@/lib/voiceOut";
-import {
-  recognitionCtor, pickVoice, rankedVoices, loadVoices, speakNaturally,
-  type Recognition,
-} from "@/lib/speech";
+import { recognitionCtor, pickVoice, loadVoices, type Recognition } from "@/lib/speech";
 import { save, type ChatMsg } from "@/lib/store";
 import { postJson } from "@/lib/api";
 
@@ -24,7 +21,6 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI, setVoiceURI] = useState<string | null>(null);
-  const [engine, setEngine] = useState<"elevenlabs" | "browser" | null>(null);
 
   // Live audio amplitude, 0..1 — read by the orb in its own rAF loop.
   const levelRef = useRef(0);
@@ -50,11 +46,8 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
     let alive = true;
     loadVoices().then((all) => {
       if (!alive) return;
-      const ranked = rankedVoices(all, navigator.language || "en-US");
-      setVoices(ranked);
-      let saved: string | null = null;
-      try { saved = window.localStorage.getItem("tm.voice"); } catch { /* ignore */ }
-      const chosen = pickVoice(all, saved, navigator.language || "en-US");
+      setVoices(all);
+      const chosen = pickVoice(all, null, navigator.language || "en-US");
       if (chosen) setVoiceURI(chosen.voiceURI);
     });
     return () => { alive = false; };
@@ -83,7 +76,6 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       speakerRef.current?.stop();
       const speaker = speakOut(text, {
         voice,
-        onEngine: setEngine,
         onDone: () => { levelRef.current = 0; then(); },
       });
       speakerRef.current = speaker;
@@ -235,40 +227,11 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
               setPhase("idle");
             } else stopAll();
           }}
-        >
-          {phase === "idle" ? <VoiceIcon /> : <StopIcon />}
-        </Orb>
+        />
 
         <p className="mt16" style={{ fontWeight: 620 }}>{label}</p>
         {heard && <p className="small muted mt8">&ldquo;{heard}&rdquo;</p>}
         {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
-
-        {engine === "browser" && voices.length > 1 && (
-          <label className="field mt20" style={{ textAlign: "left" }}>
-            <span>Voice</span>
-            <select
-              className="input"
-              value={voiceURI ?? ""}
-              onChange={(e) => {
-                setVoiceURI(e.target.value);
-                try { window.localStorage.setItem("tm.voice", e.target.value); } catch { /* ignore */ }
-                // Say a line in the new voice so the choice is audible.
-                const v = voices.find((x) => x.voiceURI === e.target.value) ?? null;
-                stopSpeechRef.current?.();
-                stopSpeechRef.current = speakNaturally("Okay. Where did you get to?", v);
-              }}
-            >
-              {voices.map((v) => (
-                <option key={v.voiceURI} value={v.voiceURI}>
-                  {v.name.replace(/\s*\([^)]*\)\s*$/, "")}
-                </option>
-              ))}
-            </select>
-            <span className="tiny muted" style={{ fontWeight: 500, marginTop: 6, display: "block" }}>
-              Best first. The most natural ones need a connection.
-            </span>
-          </label>
-        )}
 
         <label className="row mt16" style={{ justifyContent: "center", gap: 8, fontSize: 13.5 }}>
           <input

@@ -641,78 +641,86 @@ label.field > span {
   inset: 0;
   border-radius: 50%;
   overflow: hidden;
-  /* Dark ground so the light masses and the grain both read. */
-  background: radial-gradient(115% 115% at 44% 40%, #0A4436 0%, #04211B 58%, #010C0A 100%);
+  background: radial-gradient(120% 120% at 42% 44%, #0E5544 0%, #052A22 55%, #010D0B 100%);
 }
 
-/* Colour masses, like ink suspended in water. Kept distinct rather than
-   blurred into one tone — the mottling is the whole look. */
+/* Irregular colour masses. Deliberately not a shaded sphere — the reference
+   is turbulent, like ink suspended in water, so the masses stay distinct and
+   there is no specular highlight to make it read as a 3D ball. */
 .orb-blob {
   position: absolute;
   border-radius: 50%;
   will-change: transform;
 }
 
-/* pale mint rim, upper left */
+/* pale mint, sweeping the top-left rim */
 .orb-blob.b1 {
-  width: 92%; height: 80%;
-  left: -22%; top: -14%;
-  background: radial-gradient(circle at 50% 50%, #B6F3DE 0%, #4FD0AC 38%, rgba(79,208,172,0) 70%);
-  filter: blur(16px);
-  opacity: calc(0.82 + var(--lvl, 0) * 0.18);
+  width: 96%; height: 72%;
+  left: -26%; top: -18%;
+  background: radial-gradient(circle at 55% 55%, #CFF8E8 0%, #6FDCBB 34%, rgba(111,220,187,0) 66%);
+  filter: blur(13px);
+  opacity: calc(0.88 + var(--lvl, 0) * 0.12);
   animation: drift1 14s ease-in-out infinite;
 }
 
-/* mid teal mass, right */
+/* saturated mint through the middle, the "purple" of the reference */
 .orb-blob.b2 {
-  width: 78%; height: 92%;
-  right: -20%; top: -10%;
-  background: radial-gradient(circle at 50% 50%, #24B48F 0%, #0E6A55 42%, rgba(14,106,85,0) 72%);
-  filter: blur(18px);
-  opacity: calc(0.75 + var(--lvl, 0) * 0.25);
-  animation: drift2 18s ease-in-out infinite;
+  width: 84%; height: 70%;
+  left: -6%; top: 26%;
+  background: radial-gradient(circle at 50% 50%, #1FC79B 0%, #0F7A61 45%, rgba(15,122,97,0) 74%);
+  filter: blur(15px);
+  opacity: calc(0.8 + var(--lvl, 0) * 0.2);
+  animation: drift4 12s ease-in-out infinite;
 }
 
-/* near-black mass sweeping the lower middle */
+/* near-black mass, top-right */
 .orb-blob.b3 {
-  width: 105%; height: 78%;
-  left: -4%; bottom: -20%;
-  background: radial-gradient(circle at 50% 45%, #01100C 0%, #02150F 40%, rgba(2,21,15,0) 72%);
-  filter: blur(20px);
-  opacity: .92;
-  animation: drift3 16s ease-in-out infinite;
+  width: 74%; height: 66%;
+  right: -16%; top: -10%;
+  background: radial-gradient(circle at 45% 55%, #010A08 0%, #020F0C 44%, rgba(2,15,12,0) 70%);
+  filter: blur(15px);
+  opacity: .95;
+  animation: drift2 17s ease-in-out infinite;
 }
 
-/* bright highlight that swells with the voice */
+/* second dark mass, lower right, keeps it asymmetric */
 .orb-blob.b4 {
-  width: 62%; height: 58%;
-  left: 10%; top: 42%;
-  background: radial-gradient(circle at 50% 50%, #7FE3C2 0%, rgba(127,227,194,0) 62%);
-  filter: blur(22px);
-  opacity: calc(0.18 + var(--lvl, 0) * 0.62);
-  animation: drift4 11s ease-in-out infinite;
+  width: 82%; height: 72%;
+  right: -22%; bottom: -20%;
+  background: radial-gradient(circle at 45% 40%, #01110D 0%, rgba(1,17,13,0) 66%);
+  filter: blur(18px);
+  opacity: .9;
+  animation: drift3 15s ease-in-out infinite;
+}
+
+/* cool rim light, bottom-left */
+.orb-blob.b5 {
+  width: 62%; height: 54%;
+  left: -12%; bottom: -8%;
+  background: radial-gradient(circle at 55% 45%, #8FE8CD 0%, rgba(143,232,205,0) 64%);
+  filter: blur(17px);
+  opacity: calc(0.5 + var(--lvl, 0) * 0.4);
+  animation: drift5 13s ease-in-out infinite;
 }
 
 .orb-grain {
   position: absolute;
-  inset: -25%;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%274%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27220%27%20height%3D%27220%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
-  background-size: 200px 200px;
-  opacity: .55;
+  inset: -30%;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.95%27%20numOctaves%3D%275%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3CfeFuncG%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3CfeFuncB%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D%27180%27%20height%3D%27180%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
+  background-size: 180px 180px;
+  opacity: .82;
   mix-blend-mode: overlay;
   pointer-events: none;
-  animation: grainshift 5s steps(5) infinite;
+  animation: grainshift 4s steps(5) infinite;
 }
 
-/* Sphere shaping: a light catch top-left, and a soft terminator, both gentle
-   enough to leave the mottling visible. */
+/* Only an edge falloff, so it reads as a disc of turbulence rather than a
+   billiard ball. No highlight. */
 .orb-sheen {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background:
-    radial-gradient(46% 38% at 30% 18%, rgba(255,255,255,.34), rgba(255,255,255,0) 70%),
-    radial-gradient(120% 120% at 42% 36%, rgba(0,0,0,0) 52%, rgba(0,0,0,.5) 100%);
+  background: radial-gradient(78% 78% at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,.42) 100%);
   pointer-events: none;
 }
 
@@ -765,6 +773,11 @@ label.field > span {
 @keyframes drift4 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50%      { transform: translate(12%, -12%) scale(1.2); }
+}
+
+@keyframes drift5 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(10%, -12%) scale(1.16); }
 }
 
 @keyframes grainshift {
