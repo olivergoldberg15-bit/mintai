@@ -15,8 +15,19 @@ export const maxDuration = 30;
  * which speechSynthesis cannot provide.
  */
 
-// Warm, unhurried, reads well as a tutor. Override with ELEVENLABS_VOICE_ID.
-const DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM";
+/**
+ * Voices a free-tier key can actually use, verified against the live API.
+ *
+ * ElevenLabs splits voices into "default" and "library", and free accounts get
+ * 402 paid_plan_required on anything from the library — including Rachel
+ * (21m00Tcm4TlvDq8ikWAM) and Aria, which are the ones most examples reach for.
+ * These three returned real audio on a free key.
+ */
+const FREE_VOICES = [
+  "EXAVITQu4vr4xnSDxMaL", // Sarah — warm, unhurried, reads well as a tutor
+  "FGY2WhTYpPnrIDTdsKH5", // Laura
+  "JBFqnCBsd6RMkjVDRZzb", // George
+];
 
 export async function POST(req: Request) {
   const key = process.env.ELEVENLABS_API_KEY;
@@ -35,47 +46,57 @@ export async function POST(req: Request) {
   const text = (body.text ?? "").trim().slice(0, 1200);
   if (!text) return NextResponse.json({ error: "Nothing to say." }, { status: 400 });
 
-  const voice = process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE;
+  // An explicitly configured voice wins, then the verified free ones.
+  const configured = process.env.ELEVENLABS_VOICE_ID;
+  const voices = configured ? [configured, ...FREE_VOICES] : FREE_VOICES;
 
-  try {
-    const res = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: { "xi-api-key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          // Flash is the low-latency model — it matters when someone is sitting
-          // waiting for a reply out loud.
-          model_id: process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5",
-          voice_settings: {
-            stability: 0.4,        // lower = more expressive, less monotone
-            similarity_boost: 0.75,
-            style: 0.35,
-            use_speaker_boost: true,
-          },
-        }),
-        signal: AbortSignal.timeout(25_000),
-      },
-    );
+  const payload = JSON.stringify({
+    text,
+    // Flash is the low-latency model — it matters when someone is sitting
+    // waiting for a reply out loud.
+    model_id: process.env.ELEVENLABS_MODEL_ID || "eleven_flash_v2_5",
+    voice_settings: {
+      stability: 0.4,        // lower = more expressive, less monotone
+      similarity_boost: 0.75,
+      style: 0.35,
+      use_speaker_boost: true,
+    },
+  });
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      // 401 bad key or 429 quota — let the client drop to the browser voice.
-      return NextResponse.json(
-        { error: "tts-failed", status: res.status, detail: detail.slice(0, 200) },
-        { status: res.status === 401 || res.status === 429 ? 502 : 502 },
+  let last = { status: 502, detail: "" };
+
+  for (const voice of voices) {
+    try {
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`,
+        {
+          method: "POST",
+          headers: { "xi-api-key": key, "Content-Type": "application/json" },
+          body: payload,
+          signal: AbortSignal.timeout(25_000),
+        },
       );
-    }
 
-    const audio = await res.arrayBuffer();
-    return new NextResponse(audio, {
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch {
-    return NextResponse.json({ error: "tts-failed" }, { status: 502 });
+      if (res.ok) {
+        return new NextResponse(await res.arrayBuffer(), {
+          headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
+        });
+      }
+
+      last = { status: res.status, detail: (await res.text().catch(() => "")).slice(0, 200) };
+
+      // 402 means this particular voice needs a paid plan — the next one may
+      // not. Anything else (bad key, quota, outage) will not improve by
+      // retrying with a different voice.
+      if (res.status !== 402) break;
+    } catch (e) {
+      last = { status: 502, detail: (e as Error).message.slice(0, 200) };
+      break;
+    }
   }
+
+  return NextResponse.json(
+    { error: "tts-failed", status: last.status, detail: last.detail },
+    { status: 502 },
+  );
 }

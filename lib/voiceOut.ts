@@ -121,7 +121,8 @@ export function speak(
           opts.onFallback?.(
             info?.status === 401 ? "ElevenLabs rejected the key"
             : info?.status === 429 ? "ElevenLabs quota reached"
-            : `ElevenLabs failed (${res.status})`,
+            : info?.status === 402 ? "that ElevenLabs voice needs a paid plan"
+            : `ElevenLabs failed (${info?.status ?? res.status})`,
           );
         }
         return browser();
