@@ -65,6 +65,8 @@ export function speak(
     onDone?: () => void;
     onEngine?: (engine: "elevenlabs" | "browser") => void;
     onFallback?: (reason: string) => void;
+    /** ElevenLabs voice id; the server picks a default when omitted. */
+    voiceId?: string | null;
   } = {},
 ): Speaker {
   const level = { current: 0 };
@@ -109,7 +111,7 @@ export function speak(
       const res = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: speakable(text) }),
+        body: JSON.stringify({ text: speakable(text), voiceId: opts.voiceId ?? null }),
       });
 
       if (!res.ok) {
@@ -128,57 +130,92 @@ export function speak(
         return browser();
       }
 
-      const buf = await res.arrayBuffer();
+      const blob = await res.blob();
       if (cancelled) return;
 
-      const ac = audioContext();
-      if (!ac) return browser();
+      /*
+       * Playback goes through an <audio> element rather than
+       * decodeAudioData + BufferSource.
+       *
+       * Two reasons. Safari's decodeAudioData is unreliable on some MP3s and
+       * simply rejects, and previously that meant no sound at all — the
+       * analyser and the playback were the same code path, so losing the
+       * analyser lost the audio with it. An element decodes natively, and the
+       * analyser is now layered on top: if it cannot be attached we still
+       * hear the reply, just with a synthesised level for the orb.
+       */
+      const url = URL.createObjectURL(blob);
+      const el = new Audio();
+      el.src = url;
+      el.preload = "auto";
+      // Lets iOS play it inline instead of taking over the screen.
+      el.setAttribute("playsinline", "");
+      el.crossOrigin = "anonymous";
 
-      // Never start into a suspended context — that is silence, not sound.
-      if (ac.state === "suspended") {
-        try { await ac.resume(); } catch { /* blocked without a gesture */ }
-      }
-      if (ac.state !== "running") return browser();
-
-      const decoded = await ac.decodeAudioData(buf.slice(0));
-      if (cancelled) return;
-
-      ttsAvailable = true;
-      opts.onEngine?.("elevenlabs");
-
-      const source = ac.createBufferSource();
-      source.buffer = decoded;
-
-      const analyser = ac.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.75;
-
-      source.connect(analyser);
-      analyser.connect(ac.destination);
-
-      const data = new Uint8Array(analyser.frequencyBinCount);
       let raf = 0;
-      const tick = () => {
-        if (cancelled) return;
-        analyser.getByteFrequencyData(data);
-        // Weight the low-mid band — that is where speech energy lives, so the
-        // orb tracks syllables instead of sibilance.
-        let sum = 0;
-        const bins = Math.floor(data.length * 0.45);
-        for (let i = 0; i < bins; i++) sum += data[i];
-        const avg = sum / bins / 255;
-        level.current = Math.min(1, avg * 2.1);
-        raf = requestAnimationFrame(tick);
-      };
-      tick();
+      let detach = () => {};
 
-      source.onended = () => { cancelAnimationFrame(raf); finish(); };
-      stopInner = () => {
+      const cleanup = () => {
         cancelAnimationFrame(raf);
-        try { source.stop(); } catch { /* already stopped */ }
+        detach();
+        URL.revokeObjectURL(url);
       };
 
-      source.start();
+      // Analyser is best-effort; failure must not cost us the audio.
+      const ac = audioContext();
+      if (ac) {
+        try {
+          if (ac.state === "suspended") await ac.resume();
+          const src = ac.createMediaElementSource(el);
+          const analyser = ac.createAnalyser();
+          analyser.fftSize = 512;
+          analyser.smoothingTimeConstant = 0.75;
+          src.connect(analyser);
+          analyser.connect(ac.destination);
+
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          const tick = () => {
+            if (cancelled) return;
+            analyser.getByteFrequencyData(data);
+            // Weight the low-mid band — where speech energy sits — so the orb
+            // tracks syllables rather than sibilance.
+            let sum = 0;
+            const bins = Math.floor(data.length * 0.45);
+            for (let i = 0; i < bins; i++) sum += data[i];
+            level.current = Math.min(1, (sum / bins / 255) * 2.1);
+            raf = requestAnimationFrame(tick);
+          };
+          tick();
+          detach = () => { try { src.disconnect(); analyser.disconnect(); } catch { /* gone */ } };
+        } catch {
+          // No analyser — drive the orb from the clock instead.
+          const t0 = performance.now();
+          const tick = () => {
+            if (cancelled) return;
+            const t = (performance.now() - t0) / 1000;
+            level.current = 0.3 + 0.28 * Math.abs(Math.sin(t * 4.3));
+            raf = requestAnimationFrame(tick);
+          };
+          tick();
+        }
+      }
+
+      el.onended = () => { cleanup(); finish(); };
+      el.onerror = () => { cleanup(); if (!cancelled) browser(); };
+
+      stopInner = () => { cleanup(); el.pause(); el.src = ""; };
+
+      try {
+        await el.play();
+        ttsAvailable = true;
+        opts.onEngine?.("elevenlabs");
+      } catch {
+        // Blocked because no gesture reached this far — say so rather than
+        // playing nothing.
+        cleanup();
+        opts.onFallback?.("the browser blocked audio playback");
+        return browser();
+      }
     } catch {
       if (!cancelled) browser();
     }

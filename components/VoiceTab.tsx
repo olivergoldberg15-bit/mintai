@@ -21,6 +21,10 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
   const [engine, setEngine] = useState<"elevenlabs" | "browser" | null>(null);
   const [fallbackWhy, setFallbackWhy] = useState<string | null>(null);
 
+  type VoiceOpt = { id: string; name: string; note?: string };
+  const [ttsVoices, setTtsVoices] = useState<VoiceOpt[]>([]);
+  const [ttsVoiceId, setTtsVoiceId] = useState<string>("");
+
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI, setVoiceURI] = useState<string | null>(null);
 
@@ -52,6 +56,17 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       const chosen = pickVoice(all, null, navigator.language || "en-US");
       if (chosen) setVoiceURI(chosen.voiceURI);
     });
+    fetch("/api/voices")
+      .then((r) => r.json())
+      .then((d: { voices?: VoiceOpt[] }) => {
+        if (!alive || !d.voices?.length) return;
+        setTtsVoices(d.voices);
+        let saved = "";
+        try { saved = window.localStorage.getItem("tm.ttsVoice") ?? ""; } catch { /* ignore */ }
+        setTtsVoiceId(d.voices.some((v) => v.id === saved) ? saved : d.voices[0].id);
+      })
+      .catch(() => { /* picker just will not show */ });
+
     return () => { alive = false; };
   }, []);
 
@@ -78,6 +93,7 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       speakerRef.current?.stop();
       const speaker = speakOut(text, {
         voice,
+        voiceId: ttsVoiceId || null,
         onEngine: setEngine,
         onFallback: setFallbackWhy,
         onDone: () => { levelRef.current = 0; then(); },
@@ -95,7 +111,7 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
       stopSpeechRef.current = () => speaker.stop();
     },
-    [voices, voiceURI],
+    [voices, voiceURI, ttsVoiceId],
   );
 
   const ask = useCallback(
@@ -245,6 +261,50 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
           </p>
         )}
         {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
+
+        {ttsVoices.length > 1 && (
+          <label className="field mt20" style={{ textAlign: "left" }}>
+            <span>Voice</span>
+            <div className="row" style={{ gap: 8 }}>
+              <select
+                className="input grow"
+                value={ttsVoiceId}
+                onChange={(e) => {
+                  setTtsVoiceId(e.target.value);
+                  try { window.localStorage.setItem("tm.ttsVoice", e.target.value); } catch { /* ignore */ }
+                }}
+              >
+                {ttsVoices.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}{v.note ? ` — ${v.note}` : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn sm secondary"
+                onClick={() => {
+                  unlockAudio();
+                  speakerRef.current?.stop();
+                  const sp = speakOut("Okay, so where did you get to?", {
+                    voiceId: ttsVoiceId || null,
+                    onEngine: setEngine,
+                    onFallback: setFallbackWhy,
+                  });
+                  speakerRef.current = sp;
+                  const pump = () => {
+                    if (speakerRef.current !== sp) return;
+                    levelRef.current = sp.level.current;
+                    requestAnimationFrame(pump);
+                  };
+                  pump();
+                }}
+              >
+                Hear it
+              </button>
+            </div>
+          </label>
+        )}
 
         <label className="row mt16" style={{ justifyContent: "center", gap: 8, fontSize: 13.5 }}>
           <input

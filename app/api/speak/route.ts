@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "tts-not-configured" }, { status: 501 });
   }
 
-  let body: { text?: string };
+  let body: { text?: string; voiceId?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -46,9 +46,11 @@ export async function POST(req: Request) {
   const text = (body.text ?? "").trim().slice(0, 1200);
   if (!text) return NextResponse.json({ error: "Nothing to say." }, { status: 400 });
 
-  // An explicitly configured voice wins, then the verified free ones.
+  // The listener's pick wins, then a configured default, then the verified
+  // free ones as a fallback.
+  const chosen = typeof body.voiceId === "string" ? body.voiceId.trim() : "";
   const configured = process.env.ELEVENLABS_VOICE_ID;
-  const voices = configured ? [configured, ...FREE_VOICES] : FREE_VOICES;
+  const voices = [...new Set([chosen, configured, ...FREE_VOICES].filter(Boolean))] as string[];
 
   const payload = JSON.stringify({
     text,
