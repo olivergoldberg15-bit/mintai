@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * actually configured there. Reports only whether values are present and how
  * they are shaped — never the values themselves.
  */
-export async function GET() {
+export async function GET(req: Request) {
   const key = process.env.OPENROUTER_API_KEY ?? "";
 
   const checks = {
@@ -52,10 +52,55 @@ export async function GET() {
     },
   };
 
+  // A present key is not a working key: an ElevenLabs key can be valid and
+  // still lack the text_to_speech scope, which reads as "ready" here but
+  // fails on every actual request. ?probe=1 spends a few characters of quota
+  // to find out for certain.
+  let probe: Record<string, unknown> | null = null;
+  if (new URL(req.url).searchParams.get("probe") && process.env.ELEVENLABS_API_KEY) {
+    try {
+      const r = await fetch(
+        "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL?output_format=mp3_44100_128",
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": process.env.ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: "Test.", model_id: "eleven_flash_v2_5" }),
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
+      if (r.ok) {
+        probe = { ok: true, status: 200, verdict: "the key really can synthesise speech" };
+      } else {
+        const d = await r.json().catch(() => null);
+        const msg = d?.detail?.message ?? `HTTP ${r.status}`;
+        probe = {
+          ok: false,
+          status: r.status,
+          verdict:
+            r.status === 401 ? `the key is rejected — ${msg}`
+            : r.status === 402 ? "this voice needs a paid plan"
+            : r.status === 429 ? "quota reached"
+            : msg,
+        };
+      }
+    } catch (e) {
+      probe = { ok: false, verdict: `could not reach ElevenLabs — ${(e as Error).message}` };
+    }
+  }
+
   const ok = checks.tutor.openrouter_key_set && checks.tutor.key_looks_right;
 
   return NextResponse.json(
-    { ok, summary: ok ? "Tutoring is configured." : "Tutoring is NOT configured.", checks },
+    {
+      ok,
+      summary: ok ? "Tutoring is configured." : "Tutoring is NOT configured.",
+      checks,
+      ...(probe ? { voice_probe: probe } : {}),
+      hint: "Add ?probe=1 to test the ElevenLabs key for real.",
+    },
     { status: 200 },
   );
 }
