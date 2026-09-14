@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CloseIcon } from "./Icons";
 import Orb from "./Orb";
-import { speak as speakOut, type Speaker } from "@/lib/voiceOut";
+import { speak as speakOut, unlockAudio, type Speaker } from "@/lib/voiceOut";
 import { recognitionCtor, pickVoice, loadVoices, type Recognition } from "@/lib/speech";
 import { save, type ChatMsg } from "@/lib/store";
 import { postJson } from "@/lib/api";
@@ -18,6 +18,8 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(true);
+  const [engine, setEngine] = useState<"elevenlabs" | "browser" | null>(null);
+  const [fallbackWhy, setFallbackWhy] = useState<string | null>(null);
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI, setVoiceURI] = useState<string | null>(null);
@@ -76,6 +78,8 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
       speakerRef.current?.stop();
       const speaker = speakOut(text, {
         voice,
+        onEngine: setEngine,
+        onFallback: setFallbackWhy,
         onDone: () => { levelRef.current = 0; then(); },
       });
       speakerRef.current = speaker;
@@ -219,6 +223,8 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
           levelRef={levelRef}
           label={label}
           onClick={() => {
+            // Must happen synchronously in the gesture, before any await.
+            unlockAudio();
             if (phase === "idle") startListening();
             else if (phase === "speaking") {
               speakerRef.current?.stop();
@@ -231,6 +237,13 @@ export default function VoiceTab({ userId }: { userId: string | null }) {
 
         <p className="mt16" style={{ fontWeight: 620 }}>{label}</p>
         {heard && <p className="small muted mt8">&ldquo;{heard}&rdquo;</p>}
+        {engine && (
+          <p className="tiny muted mt8">
+            {engine === "elevenlabs"
+              ? "Natural voice"
+              : `Device voice${fallbackWhy ? ` — ${fallbackWhy}` : ""}`}
+          </p>
+        )}
         {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
 
         <label className="row mt16" style={{ justifyContent: "center", gap: 8, fontSize: 13.5 }}>

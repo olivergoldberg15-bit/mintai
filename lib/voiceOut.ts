@@ -27,8 +27,32 @@ function audioContext(): AudioContext | null {
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) return null;
   if (!ctx || ctx.state === "closed") ctx = new Ctor();
-  if (ctx.state === "suspended") void ctx.resume();
   return ctx;
+}
+
+/**
+ * Unlock audio playback. MUST be called synchronously inside a real user
+ * gesture — a tap handler, not a promise callback.
+ *
+ * iOS and Chrome only allow audio that a person started. By the time a spoken
+ * reply is ready we are several awaits past the tap, so a context created then
+ * is born suspended and every buffer plays in silence. Creating it during the
+ * tap and priming it with a silent buffer keeps it running for the rest of the
+ * session, which is what makes the later playback audible.
+ */
+export function unlockAudio(): void {
+  const ac = audioContext();
+  if (!ac) return;
+  void ac.resume();
+  try {
+    const buf = ac.createBuffer(1, 1, 22050);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.start(0);
+  } catch {
+    /* already running */
+  }
 }
 
 /** True once /api/speak has answered with real audio at least once. */
@@ -40,6 +64,7 @@ export function speak(
     voice?: SpeechSynthesisVoice | null;
     onDone?: () => void;
     onEngine?: (engine: "elevenlabs" | "browser") => void;
+    onFallback?: (reason: string) => void;
   } = {},
 ): Speaker {
   const level = { current: 0 };
@@ -88,7 +113,17 @@ export function speak(
       });
 
       if (!res.ok) {
-        if (res.status === 501) ttsAvailable = false; // not configured; stop trying
+        if (res.status === 501) {
+          ttsAvailable = false; // not configured; stop asking
+          opts.onFallback?.("ELEVENLABS_API_KEY is not set on the server");
+        } else {
+          const info = await res.json().catch(() => null);
+          opts.onFallback?.(
+            info?.status === 401 ? "ElevenLabs rejected the key"
+            : info?.status === 429 ? "ElevenLabs quota reached"
+            : `ElevenLabs failed (${res.status})`,
+          );
+        }
         return browser();
       }
 
@@ -97,6 +132,12 @@ export function speak(
 
       const ac = audioContext();
       if (!ac) return browser();
+
+      // Never start into a suspended context — that is silence, not sound.
+      if (ac.state === "suspended") {
+        try { await ac.resume(); } catch { /* blocked without a gesture */ }
+      }
+      if (ac.state !== "running") return browser();
 
       const decoded = await ac.decodeAudioData(buf.slice(0));
       if (cancelled) return;

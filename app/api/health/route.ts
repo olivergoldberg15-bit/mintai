@@ -30,6 +30,16 @@ export async function GET() {
         ? "ready"
         : "not configured — the app runs on-device only, with no sign-in or sync",
     },
+    voice: {
+      elevenlabs_key_set: Boolean(process.env.ELEVENLABS_API_KEY),
+      key_looks_right: (process.env.ELEVENLABS_API_KEY ?? "").startsWith("sk_"),
+      status: process.env.ELEVENLABS_API_KEY
+        ? (process.env.ELEVENLABS_API_KEY ?? "").startsWith("sk_")
+          ? "ready — replies use the ElevenLabs voice"
+          : "key is set but does not look like an ElevenLabs key (they start with sk_)"
+        : "not set — replies use the device's built-in voice",
+    },
+
     site_url: {
       value: process.env.NEXT_PUBLIC_SITE_URL || null,
       // Sign-in redirects use window.location.origin at runtime, so this is
