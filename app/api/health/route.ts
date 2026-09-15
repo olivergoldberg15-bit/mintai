@@ -12,7 +12,18 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const key = process.env.OPENROUTER_API_KEY ?? "";
 
+  // Which commit this deployment is actually running. Vercel injects these at
+  // build time. Without them a stale deployment is indistinguishable from a
+  // fresh one — the site looks fine and simply lacks the newest routes.
+  const build = {
+    commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) || "unknown",
+    branch: process.env.VERCEL_GIT_COMMIT_REF ?? "unknown",
+    message: process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0] ?? null,
+    env: process.env.VERCEL_ENV ?? "local",
+  };
+
   const checks = {
+    build,
     tutor: {
       openrouter_key_set: Boolean(key),
       key_looks_right: key.startsWith("sk-or-"),

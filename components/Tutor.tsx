@@ -5,6 +5,7 @@ import Markdown from "./Markdown";
 import { SendIcon, VideoIcon, PlayIcon } from "./Icons";
 import { save, type ChatMsg, type TutorSession } from "@/lib/store";
 import { postJson } from "@/lib/api";
+import Mascot from "./Mascot";
 
 type Video = { title: string; channel: string; why: string; url: string; thumb: string | null };
 
@@ -165,6 +166,7 @@ export default function Tutor({
 
       {!started && (
         <div className="empty">
+          <Mascot mood="idle" size={92} />
           <h3 className="mt12">{source === "scan" ? "Take a photo of the problem" : "Type the problem"}</h3>
           <p>You get the questions, not the answers.</p>
         </div>

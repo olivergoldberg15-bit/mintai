@@ -885,3 +885,34 @@ label.field > span {
     transition-duration: .001ms !important;
   }
 }
+
+/* --- Sprig -------------------------------------------------------------
+   The leaf breathes and blinks. Both are deliberately slow and small: the
+   point is that he looks alive when you glance at him, not that he performs.
+   The global prefers-reduced-motion rule above already neutralises these; the
+   block below turns them off outright so nothing is left twitching. */
+
+.sprig {
+  animation: sprig-sway 6.5s ease-in-out infinite;
+  transform-origin: 62px 108px;   /* the base of the stem, so he pivots like a plant */
+}
+
+@keyframes sprig-sway {
+  0%, 100% { transform: rotate(-1.6deg) translateY(0); }
+  50%      { transform: rotate(1.6deg) translateY(-2px); }
+}
+
+/* Long open, quick close — a real blink is almost all "open". */
+.sprig-eye {
+  animation: sprig-blink 5.2s infinite;
+}
+.sprig-eye:nth-of-type(2) { animation-delay: .07s; }  /* eyes never land together */
+
+@keyframes sprig-blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  97%           { transform: scaleY(.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprig, .sprig-eye { animation: none !important; }
+}

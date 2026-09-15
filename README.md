@@ -37,7 +37,9 @@ still won't do your homework). Both are one tap apart everywhere.
 
 **You** — Google or email sign-in, profile picture, and your stats.
 
-Sprig, the mint leaf, reacts to what's going on.
+Sprig, the mint leaf, turns up on the screens that would otherwise be blank —
+before your first photo, on sign-in, on an empty to-do list — and reacts to
+your quiz score. He stays out of the way once there's something on screen.
 
 ## The one rule
 
