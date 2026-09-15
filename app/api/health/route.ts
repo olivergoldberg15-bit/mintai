@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CLOUD_ENABLED, SUPABASE_FROM_ENV, SUPABASE_URL } from "@/lib/config";
+import { modelChain } from "@/lib/openrouter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,9 +58,14 @@ export async function GET(req: Request) {
       // only used for OpenRouter attribution. Optional either way.
       status: process.env.NEXT_PUBLIC_SITE_URL ? "set" : "not set — optional",
     },
+    // The real chains, not just whether an override is set. Which model
+    // actually answers is the difference between a 1-second reply and a
+    // 20-second one, so it is worth being able to read it off the deploy.
     models: {
-      text: (process.env.OPENROUTER_TEXT_MODELS ?? "built-in chain").split(",")[0],
-      vision: (process.env.OPENROUTER_VISION_MODELS ?? "built-in chain").split(",")[0],
+      text: modelChain(false),
+      vision: modelChain(true),
+      first: modelChain(false)[0],
+      paid_first: !modelChain(false)[0]?.endsWith(":free"),
     },
   };
 
