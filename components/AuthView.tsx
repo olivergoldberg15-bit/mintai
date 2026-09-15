@@ -134,7 +134,7 @@ export default function AuthView() {
         />
       </label>
 
-      {error && <p className="small mt12" style={{ color: "#A32E25" }}>{error}</p>}
+      {error && <p className="small mt12" style={{ color: "var(--red)" }}>{error}</p>}
 
       <button className="btn block mt16" onClick={submit} disabled={busy || !valid}>
         {busy ? <span className="spin" /> : mode === "in" ? "Sign in" : "Create account"}

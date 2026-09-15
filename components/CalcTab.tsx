@@ -141,7 +141,8 @@ function Grapher() {
 
     // grid
     const step = niceStep(span);
-    ctx.strokeStyle = "rgba(13,26,22,0.07)";
+    // Canvas takes no CSS variables, so these mirror the dark tokens.
+    ctx.strokeStyle = "rgba(236,239,238,0.07)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = Math.ceil(xMin / step) * step; x <= xMax; x += step) {
@@ -153,7 +154,7 @@ function Grapher() {
     ctx.stroke();
 
     // axes
-    ctx.strokeStyle = "rgba(13,26,22,0.32)";
+    ctx.strokeStyle = "rgba(236,239,238,0.30)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, py(0)); ctx.lineTo(w, py(0));
@@ -161,7 +162,7 @@ function Grapher() {
     ctx.stroke();
 
     // axis numbers
-    ctx.fillStyle = "rgba(13,26,22,0.45)";
+    ctx.fillStyle = "rgba(236,239,238,0.45)";
     ctx.font = "11px -apple-system, system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -180,7 +181,7 @@ function Grapher() {
     const src = input.replace(/^\s*y\s*=\s*/i, "").trim();
     if (!src) { setError(null); return; }
 
-    ctx.strokeStyle = "#24B48F";
+    ctx.strokeStyle = "#3FE0A8";
     ctx.lineWidth = 2.4;
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -249,7 +250,7 @@ function Grapher() {
         />
       </div>
 
-      {error && <p className="small mt8" style={{ color: "#A32E25" }}>{error}</p>}
+      {error && <p className="small mt8" style={{ color: "var(--red)" }}>{error}</p>}
 
       <div className="row mt12" style={{ gap: 8 }}>
         <button className="btn sm secondary grow" onClick={() => setSpan((s) => Math.min(s * 2, 1000))}>

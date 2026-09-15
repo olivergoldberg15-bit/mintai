@@ -126,7 +126,7 @@ export default function ProfileTab({
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="" />
                 ) : (
-                  <span style={{ fontSize: 28, fontWeight: 700, color: "#14977A" }}>{initials}</span>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: "var(--mint)" }}>{initials}</span>
                 )}
               </div>
               <div className="grow col" style={{ gap: 3 }}>
@@ -143,7 +143,7 @@ export default function ProfileTab({
                 </button>
               </div>
             </div>
-            {uploadErr && <p className="small mt12" style={{ color: "#A32E25" }}>{uploadErr}</p>}
+            {uploadErr && <p className="small mt12" style={{ color: "var(--red)" }}>{uploadErr}</p>}
             <input
               ref={fileRef} type="file" accept="image/*" hidden
               onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }}
