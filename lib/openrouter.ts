@@ -22,8 +22,22 @@ const API = "https://openrouter.ai/api/v1/chat/completions";
  * that, leaving headroom for the response to be written.
  */
 const TOTAL_BUDGET_MS = 50_000;
+
 const PER_MODEL_MS = 24_000;
 const MIN_ATTEMPT_MS = 6_000;
+
+/**
+ * One budget for the whole HTTP request, not one per model call.
+ *
+ * A scan calls `complete` twice — once to read the photo, once to tutor from
+ * what it read. Letting each call start its own 50s budget allows 100s inside
+ * a 60s function: the platform kills it mid-flight and serves its own error
+ * page, so the friendly JSON below never reaches the browser. A route that
+ * makes more than one call creates a deadline once and passes it to each.
+ */
+export function newDeadline(): number {
+  return Date.now() + TOTAL_BUDGET_MS;
+}
 
 // Verified general-purpose models first. `openrouter/free` sits LAST on
 // purpose: it is a meta-router that picks any free model, including
@@ -157,6 +171,8 @@ export async function complete(
     maxTokens?: number;
     temperature?: number;
     json?: boolean;
+    /** Shared with the rest of the request when there is more than one call. */
+    deadline?: number;
   } = {},
 ): Promise<{ text: string; model: string }> {
   if (!process.env.OPENROUTER_API_KEY) {
@@ -176,13 +192,19 @@ export async function complete(
   // The whole chain has to finish inside the serverless function's limit.
   // Overrun it and the platform kills the request and returns its own error
   // page, so the friendly JSON below never reaches the browser.
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const deadline = opts.deadline ?? newDeadline();
   let last: TutorError | null = null;
+  let tried = 0;
+  let outOfTime = false;
 
   for (const model of models) {
     const remaining = deadline - Date.now();
     // Not enough time left to be worth starting another attempt.
-    if (remaining < MIN_ATTEMPT_MS) break;
+    if (remaining < MIN_ATTEMPT_MS) {
+      outOfTime = true;
+      break;
+    }
+    tried++;
 
     // Free models are slow when busy; cap each attempt so the chain keeps
     // moving, and never let one attempt eat the whole budget.
@@ -201,8 +223,14 @@ export async function complete(
     }
   }
 
+  // Say which of the two actually happened. "Every free model is busy" was
+  // reported even when the chain had only managed two of six attempts before
+  // the clock ran out, which points at the wrong problem.
+  const detail = last?.message ?? "no models available";
   throw new TutorError(
-    `Every free model is busy right now. Give it a minute and try again. (${last?.message ?? "no models available"})`,
+    outOfTime
+      ? `That took too long — ${tried} of ${models.length} models were tried before time ran out. Try again. (${detail})`
+      : `Every free model is busy right now. Give it a minute and try again. (${detail})`,
     503,
   );
 }

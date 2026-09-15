@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { complete, TutorError, type Msg } from "@/lib/openrouter";
+import { complete, newDeadline, TutorError, type Msg } from "@/lib/openrouter";
 import { GUIDE_SYSTEM, EXPLAIN_SYSTEM, READ_IMAGE_SYSTEM, voiceSystem } from "@/lib/prompts";
 
 export const runtime = "nodejs";
@@ -30,6 +30,17 @@ export async function POST(req: Request) {
   const mode = body.mode === "explain" ? "explain" : "guide";
   const history = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
 
+  // A scan spends two model calls on one request — reading the photo, then
+  // tutoring from the reading. They share a single budget so the pair finishes
+  // inside maxDuration and the browser gets this route's error, not Vercel's.
+  const deadline = newDeadline();
+
+  // Reading the photo is worthless on its own: if it takes the whole budget,
+  // the tutoring turn has nothing left and the request fails having done all
+  // the work. So the read gets a shorter deadline and the reply keeps the rest.
+  const REPLY_RESERVE_MS = 20_000;
+  const readDeadline = deadline - REPLY_RESERVE_MS;
+
   try {
     let subject = "";
     let problem = "";
@@ -50,7 +61,7 @@ export async function POST(req: Request) {
             ],
           },
         ],
-        { vision: true, maxTokens: 1500, temperature: 0.15 },
+        { vision: true, maxTokens: 1500, temperature: 0.15, deadline: readDeadline },
       );
 
       const parsed = splitReading(reading.text);
@@ -82,6 +93,7 @@ export async function POST(req: Request) {
     const answer = await complete([{ role: "system", content: system }, ...turns], {
       maxTokens: body.voice ? 1200 : mode === "explain" ? 2400 : 1600,
       temperature: 0.6,
+      deadline,
     });
 
     return NextResponse.json({
