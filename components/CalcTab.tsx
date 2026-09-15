@@ -141,8 +141,8 @@ function Grapher() {
 
     // grid
     const step = niceStep(span);
-    // Canvas takes no CSS variables, so these mirror the dark tokens.
-    ctx.strokeStyle = "rgba(236,239,238,0.07)";
+    // Canvas takes no CSS variables, so these mirror the ink tokens.
+    ctx.strokeStyle = "rgba(13,26,22,0.07)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = Math.ceil(xMin / step) * step; x <= xMax; x += step) {
@@ -154,7 +154,7 @@ function Grapher() {
     ctx.stroke();
 
     // axes
-    ctx.strokeStyle = "rgba(236,239,238,0.30)";
+    ctx.strokeStyle = "rgba(13,26,22,0.32)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, py(0)); ctx.lineTo(w, py(0));
@@ -162,7 +162,7 @@ function Grapher() {
     ctx.stroke();
 
     // axis numbers
-    ctx.fillStyle = "rgba(236,239,238,0.45)";
+    ctx.fillStyle = "rgba(13,26,22,0.45)";
     ctx.font = "11px -apple-system, system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -181,7 +181,7 @@ function Grapher() {
     const src = input.replace(/^\s*y\s*=\s*/i, "").trim();
     if (!src) { setError(null); return; }
 
-    ctx.strokeStyle = "#3FE0A8";
+    ctx.strokeStyle = "#12795F";
     ctx.lineWidth = 2.4;
     ctx.lineJoin = "round";
     ctx.beginPath();

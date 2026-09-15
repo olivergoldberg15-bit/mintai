@@ -26,58 +26,61 @@
 }
 
 /* ============================================================================
-   Tutor Mint — dark.
+   Tutor Mint — white first, true mint green second, black for emphasis.
 
    Three rules hold the whole thing together:
 
-   1. DEPTH COMES FROM LIGHT, NOT SHADOW. A drop shadow is invisible on black.
-      Surfaces get lighter as they come forward, and separation is a hairline
-      of low-opacity white. There is exactly one shadow in this file and it is
-      under the sheet, where a real occlusion is happening.
+   1. WHITE CARRIES THE PAGE. Structure comes from hairline rules and honest
+      shadows, not from filled boxes. If a surface needs a colour to be legible,
+      it is doing too much work.
 
    2. ONE ACCENT, USED SPARINGLY. Mint marks the thing you are meant to touch
-      and nothing else. If everything glows, nothing reads.
+      and nothing else. Black is for emphasis, never for bulk.
 
-   3. TEXT IS NOT PURE WHITE. #FFF on near-black haloes and is genuinely harder
-      to read on an OLED phone at night. Primary text sits a little under it.
+   3. #12795F IS THE ANCHOR. It clears 5.35:1 on white in both directions, so
+      the same green works as text AND as a filled surface. Everything else in
+      the scale is built around keeping that one honest.
    ========================================================================= */
 
 :root {
-  /* Mint, tuned for a dark ground. The light-mode anchor (#12795F) goes muddy
-     here, so the scale is pulled up: --mint is the one you see most. */
-  --mint:     #3FE0A8;
-  --mint-dim: #2BC48E;
-  --mint-low: #1B8C67;
-  --mint-ink: #052A20;   /* text ON a mint fill */
+  /* One true mint, built out. #12795F is the anchor: it reads as text on white
+     and as a surface under white, which is why it is both --mint and the fill
+     behind --mint-ink. */
+  --mint:     #12795F;
+  --mint-dim: #0B5F4C;   /* pressed / hovered */
+  --mint-low: #2FAE8A;   /* focus rings, quiet edges */
+  --mint-ink: #FFFFFF;   /* text ON a mint fill */
 
-  /* A mint wash for tinted surfaces. Kept as alpha so it sits correctly on
-     whatever it lands on instead of being a fixed muddy green. */
-  --mint-05: rgba(63, 224, 168, 0.05);
-  --mint-08: rgba(63, 224, 168, 0.08);
-  --mint-14: rgba(63, 224, 168, 0.14);
-  --mint-22: rgba(63, 224, 168, 0.22);
+  /* Mint washes, kept as alpha so they sit correctly on whatever is under
+     them rather than being a fixed muddy green. */
+  --mint-05: rgba(18, 121, 95, 0.04);
+  --mint-08: rgba(18, 121, 95, 0.07);
+  --mint-14: rgba(18, 121, 95, 0.10);
+  --mint-22: rgba(18, 121, 95, 0.18);
 
-  /* Ground, then three levels of elevation. */
-  --bg:    #0A0B0C;
-  --s-1:   #121415;   /* cards, bot bubbles */
-  --s-2:   #1A1D1E;   /* inputs, keys, raised things on a card */
-  --s-3:   #23282A;   /* pressed, hovered */
+  /* Ground, then three steps of tint. Cards are white ON white and are held
+     apart by their border, not by a fill. */
+  --bg:    #FFFFFF;
+  --s-1:   #FFFFFF;   /* cards, bot bubbles */
+  --s-2:   #F6FCFA;   /* inputs, keys */
+  --s-3:   #EDF8F4;   /* pressed, hovered */
 
-  --ink:   #ECEFEE;
-  --ink-2: #A5ADAA;
-  --ink-3: #7A8280;
-  --ink-4: #545B59;
+  --head:  #0A0E0D;   /* headings and emphasis — black, used sparingly */
+  --ink:   #121917;
+  --ink-2: #46534F;
+  --ink-3: #7A8884;
+  --ink-4: #A8B4B0;
 
-  --line:   rgba(255, 255, 255, 0.09);
-  --line-2: rgba(255, 255, 255, 0.055);
+  --line:   #E3EAE7;
+  --line-2: #EEF3F1;
 
-  --red:    #FF6B5E;
-  --red-bg: rgba(255, 107, 94, 0.10);
-  --red-ln: rgba(255, 107, 94, 0.26);
+  --red:    #A93226;
+  --red-bg: #FDF1F0;
+  --red-ln: #F0D2CE;
 
-  --amber:    #F5C66B;
-  --amber-bg: rgba(245, 198, 107, 0.09);
-  --amber-ln: rgba(245, 198, 107, 0.24);
+  --amber:    #6B5210;
+  --amber-bg: #FFF8E8;
+  --amber-ln: #F0DCA8;
 
   --r-lg: 20px;
   --r-md: 14px;
@@ -94,6 +97,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 }
+
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -131,16 +135,16 @@ h1, h2, h3, h4 {
   margin: 0;
   font-weight: 750;
   letter-spacing: -0.028em;
-  color: var(--ink);
+  color: var(--head);
 }
 p { margin: 0; }
 
 ::selection { background: var(--mint-22); color: var(--ink); }
 
-/* Scrollbars, where they are visible at all, should not be bright white. */
-* { scrollbar-width: thin; scrollbar-color: var(--s-3) transparent; }
+/* Scrollbars, where they are visible at all, stay quiet. */
+* { scrollbar-width: thin; scrollbar-color: var(--ink-4) transparent; }
 *::-webkit-scrollbar { width: 6px; height: 6px; }
-*::-webkit-scrollbar-thumb { background: var(--s-3); border-radius: 3px; }
+*::-webkit-scrollbar-thumb { background: var(--ink-4); border-radius: 3px; }
 *::-webkit-scrollbar-track { background: transparent; }
 
 /* ---------- Wordmark ---------- */
@@ -181,7 +185,7 @@ p { margin: 0; }
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(10, 11, 12, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--line-2);
@@ -211,7 +215,7 @@ p { margin: 0; }
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   padding: 7px 6px calc(7px + var(--safe-b));
-  background: rgba(10, 11, 12, 0.80);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border-top: 1px solid var(--line-2);
@@ -224,7 +228,7 @@ p { margin: 0; }
   /* 48px tall including padding — comfortably over the 44pt touch minimum. */
   padding: 8px 2px 5px;
   border-radius: 12px;
-  color: var(--ink-4);
+  color: var(--ink-3);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.005em;
@@ -431,24 +435,24 @@ label.field > span {
 }
 .msg img { max-width: 100%; border-radius: 13px; display: block; }
 .msg p + p { margin-top: 10px; }
-.msg strong { font-weight: 750; color: var(--ink); }
+.msg strong { font-weight: 750; color: var(--head); }
 .msg.me strong { color: var(--mint-ink); }
 .msg ul, .msg ol { margin: 9px 0 0; padding-left: 20px; }
 .msg li + li { margin-top: 5px; }
 .msg code {
   font-family: var(--mono);
   font-size: .88em;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(10, 14, 13, 0.06);
   padding: 2px 5px;
   border-radius: 5px;
 }
-.msg.me code { background: rgba(5, 42, 32, 0.15); }
+.msg.me code { background: rgba(255, 255, 255, 0.22); }
 
 .dots { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
 .dots i {
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--ink-4);
+  background: var(--mint-low);
   animation: bounce 1.2s infinite ease-in-out;
 }
 .dots i:nth-child(2) { animation-delay: .15s; }
@@ -476,7 +480,7 @@ label.field > span {
   z-index: 20;
   margin: auto -16px 0;
   padding: 10px 16px;
-  background: rgba(10, 11, 12, 0.82);
+  background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
@@ -773,6 +777,7 @@ label.field > span {
   line-height: 1.4;
   background: var(--s-1);
   border: 1px solid var(--line);
+  box-shadow: 0 4px 14px -4px rgba(10, 14, 13, 0.10);
 }
 .face.back {
   transform: rotateY(180deg);
@@ -848,7 +853,9 @@ label.field > span {
   /* --lvl (0..1) is written by the rAF loop in Orb.tsx */
   transform: scale(calc(1 + var(--lvl, 0) * 0.085));
   transition: transform .06s linear;
-  box-shadow: 0 0 calc(24px + var(--lvl, 0) * 70px) rgba(63, 224, 168, calc(0.10 + var(--lvl, 0) * 0.42));
+  box-shadow:
+    0 18px 50px -18px rgba(6, 51, 42, calc(0.45 + var(--lvl, 0) * 0.4)),
+    0 0 calc(30px + var(--lvl, 0) * 60px) rgba(18, 121, 95, calc(var(--lvl, 0) * 0.5));
 }
 
 .orb-skin {
@@ -856,9 +863,7 @@ label.field > span {
   inset: 0;
   border-radius: 50%;
   overflow: hidden;
-  /* Flat-ish. A strong centre-to-edge ramp here is the other half of the
-     billiard-ball effect. */
-  background: radial-gradient(130% 130% at 50% 52%, #0C5644 0%, #08402F 62%, #063025 100%);
+  background: radial-gradient(120% 120% at 42% 44%, #0E5544 0%, #052A22 55%, #010D0B 100%);
 }
 
 /* Irregular colour masses. Deliberately not a shaded sphere — the reference
@@ -870,45 +875,41 @@ label.field > span {
   will-change: transform;
 }
 
-/* Pale mint. Deliberately NOT parked at the top-left: that is where a
-   specular highlight goes, and on a dark ground it turns the whole thing into
-   a shaded ball instead of a body of turbulence. */
+/* pale mint, sweeping the top-left rim */
 .orb-blob.b1 {
-  width: 104%; height: 64%;
-  left: -34%; top: 10%;
-  background: radial-gradient(circle at 55% 55%, #BFF3E0 0%, #57C9A5 38%, rgba(87,201,165,0) 68%);
-  filter: blur(19px);
-  opacity: calc(0.62 + var(--lvl, 0) * 0.16);
+  width: 96%; height: 72%;
+  left: -26%; top: -18%;
+  background: radial-gradient(circle at 55% 55%, #CFF8E8 0%, #6FDCBB 34%, rgba(111,220,187,0) 66%);
+  filter: blur(13px);
+  opacity: calc(0.88 + var(--lvl, 0) * 0.12);
   animation: drift1 14s ease-in-out infinite;
 }
 
-/* saturated mint through the middle */
+/* saturated mint through the middle, the "purple" of the reference */
 .orb-blob.b2 {
   width: 84%; height: 70%;
   left: -6%; top: 26%;
-  background: radial-gradient(circle at 50% 50%, #2FE3AC 0%, #11886A 45%, rgba(17,136,106,0) 74%);
+  background: radial-gradient(circle at 50% 50%, #1FC79B 0%, #0F7A61 45%, rgba(15,122,97,0) 74%);
   filter: blur(15px);
   opacity: calc(0.8 + var(--lvl, 0) * 0.2);
   animation: drift4 12s ease-in-out infinite;
 }
 
-/* Deep mass, top-right. On a near-black page these have to sit ABOVE the
-   background, not below it, or they stop reading as masses at all and the
-   disc collapses into a lit sphere. */
+/* near-black mass, top-right */
 .orb-blob.b3 {
   width: 74%; height: 66%;
   right: -16%; top: -10%;
-  background: radial-gradient(circle at 45% 55%, #06342A 0%, #05261F 44%, rgba(5,38,31,0) 70%);
+  background: radial-gradient(circle at 45% 55%, #010A08 0%, #020F0C 44%, rgba(2,15,12,0) 70%);
   filter: blur(15px);
   opacity: .95;
   animation: drift2 17s ease-in-out infinite;
 }
 
-/* Second mass, lower right, keeps it asymmetric. */
+/* second dark mass, lower right, keeps it asymmetric */
 .orb-blob.b4 {
   width: 82%; height: 72%;
   right: -22%; bottom: -20%;
-  background: radial-gradient(circle at 45% 40%, #042A22 0%, rgba(4,42,34,0) 66%);
+  background: radial-gradient(circle at 45% 40%, #01110D 0%, rgba(1,17,13,0) 66%);
   filter: blur(18px);
   opacity: .9;
   animation: drift3 15s ease-in-out infinite;
@@ -918,7 +919,7 @@ label.field > span {
 .orb-blob.b5 {
   width: 62%; height: 54%;
   left: -12%; bottom: -8%;
-  background: radial-gradient(circle at 55% 45%, #9DF2DA 0%, rgba(157,242,218,0) 64%);
+  background: radial-gradient(circle at 55% 45%, #8FE8CD 0%, rgba(143,232,205,0) 64%);
   filter: blur(17px);
   opacity: calc(0.5 + var(--lvl, 0) * 0.4);
   animation: drift5 13s ease-in-out infinite;
@@ -929,21 +930,19 @@ label.field > span {
   inset: -30%;
   background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.95%27%20numOctaves%3D%275%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3CfeFuncG%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3CfeFuncB%20type%3D%27linear%27%20slope%3D%272.1%27%20intercept%3D%27-0.45%27%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D%27180%27%20height%3D%27180%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
   background-size: 180px 180px;
-  opacity: .78;
+  opacity: .82;
   mix-blend-mode: overlay;
   pointer-events: none;
   animation: grainshift 4s steps(5) infinite;
 }
 
-/* On white, a dark rim drew the edge of the disc. On black it merges with the
-   page and the lit middle reads as a sphere, so the edge is drawn with light
-   instead: a hairline ring, and only a whisper of falloff. */
+/* Only an edge falloff, so it reads as a disc of turbulence rather than a
+   billiard ball. No highlight. */
 .orb-sheen {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(80% 80% at 50% 50%, rgba(0,0,0,0) 72%, rgba(0,0,0,.20) 100%);
-  box-shadow: inset 0 0 0 1px rgba(190, 255, 232, 0.14);
+  background: radial-gradient(78% 78% at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,.42) 100%);
   pointer-events: none;
 }
 
@@ -966,9 +965,9 @@ label.field > span {
 .orb-listening { animation: ring 2.1s ease-out infinite; }
 
 @keyframes ring {
-  0%   { box-shadow: 0 0 0 0 rgba(63, 224, 168, .35); }
-  70%  { box-shadow: 0 0 0 30px rgba(63, 224, 168, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(63, 224, 168, 0); }
+  0%   { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 0 rgba(18,121,95,.45); }
+  70%  { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 28px rgba(18,121,95,0); }
+  100% { box-shadow: 0 18px 50px -18px rgba(6,51,42,.5), 0 0 0 0 rgba(18,121,95,0); }
 }
 
 @keyframes breathe {
@@ -1050,12 +1049,12 @@ label.field > span {
   font-size: 12px;
   opacity: .6;
 }
-.setup-x:hover { opacity: 1; background: rgba(255, 255, 255, .06); }
+.setup-x:hover { opacity: 1; background: rgba(10, 14, 13, .06); }
 
 /* Empty states carry the screen, so they are typographic rather than
    decorative — a clear line of what to do, and nothing else. */
 .empty { text-align: center; padding: 30px 18px; color: var(--ink-3); }
-.empty h3 { font-size: 17px; color: var(--ink); margin-bottom: 5px; }
+.empty h3 { font-size: 17px; color: var(--head); margin-bottom: 5px; }
 .empty p { font-size: 14px; }
 
 /* The one big statement on a landing screen. Left-aligned and tight — a
@@ -1106,7 +1105,7 @@ label.field > span {
   border-bottom: 0;
   border-radius: 22px 22px 0 0;
   padding: 10px 18px calc(24px + var(--safe-b));
-  box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 -16px 50px -16px rgba(10, 14, 13, 0.22);
   animation: up .32s var(--ease) both;
   max-height: 88dvh;
   overflow-y: auto;
@@ -1118,14 +1117,14 @@ label.field > span {
   width: 38px;
   height: 4px;
   border-radius: 2px;
-  background: var(--ink-4);
+  background: var(--line);
   margin: 0 auto 14px;
 }
 @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 .spin {
   width: 17px; height: 17px;
-  border: 2px solid rgba(5, 42, 32, .3);
+  border: 2px solid rgba(255, 255, 255, .35);
   border-top-color: var(--mint-ink);
   border-radius: 50%;
   animation: spin .65s linear infinite;
