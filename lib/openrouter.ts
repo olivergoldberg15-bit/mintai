@@ -20,12 +20,27 @@
  */
 
 /**
- * Overridable so the streaming path can be exercised against a mock that
- * speaks the same SSE protocol. Unset everywhere except in tests.
+ * Any OpenAI-compatible chat-completions endpoint works, not just OpenRouter.
+ *
+ * NVIDIA NIM (`https://integrate.api.nvidia.com/v1`) is the other one this is
+ * known to run against, and the same override lets the streaming path be
+ * exercised against a local mock.
  */
-const API =
-  (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1") +
-  "/chat/completions";
+const BASE = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
+const API = BASE + "/chat/completions";
+
+/**
+ * OpenRouter takes two parameters nobody else does: a `reasoning` object, and
+ * attribution headers. Sending `reasoning` to NVIDIA NIM is rejected outright
+ * rather than ignored, so it has to be conditional — this is the single thing
+ * that stops the client being provider-agnostic on its own.
+ */
+const IS_OPENROUTER = BASE.includes("openrouter.ai");
+
+/** The key, whichever provider is configured. */
+function apiKey(): string | undefined {
+  return process.env.OPENROUTER_API_KEY || process.env.NVIDIA_API_KEY;
+}
 
 /**
  * Vercel caps a serverless function at 60s, and a killed function returns the
@@ -110,11 +125,33 @@ function chain(envVar: string, fallback: string[]): string[] {
   return list.length ? list : fallback;
 }
 
-/** Which models a chain would use, for the health check to report. */
+/**
+ * Which models a chain would use, for the health check to report.
+ *
+ * The built-in chains are OpenRouter model IDs. Point the client at another
+ * provider and those IDs mean nothing there, so a chain MUST be configured —
+ * falling back would just 404 four times and report "every model is busy",
+ * which sends you looking in the wrong place entirely.
+ */
 export function modelChain(vision: boolean): string[] {
-  return vision
-    ? chain("OPENROUTER_VISION_MODELS", DEFAULT_VISION)
-    : chain("OPENROUTER_TEXT_MODELS", DEFAULT_TEXT);
+  const configured = vision
+    ? chain("OPENROUTER_VISION_MODELS", [])
+    : chain("OPENROUTER_TEXT_MODELS", []);
+
+  if (configured.length) return configured;
+  if (!IS_OPENROUTER) return [];
+  return vision ? DEFAULT_VISION : DEFAULT_TEXT;
+}
+
+/** Thrown when a non-OpenRouter provider is configured with no model chain. */
+function noModels(vision: boolean): TutorError {
+  return new TutorError(
+    `No models configured for ${BASE}. Set ` +
+      `${vision ? "OPENROUTER_VISION_MODELS" : "OPENROUTER_TEXT_MODELS"} ` +
+      `to a comma-separated list of model IDs that provider actually hosts. ` +
+      `The built-in defaults are OpenRouter IDs and do not exist elsewhere.`,
+    500,
+  );
 }
 
 export type TextPart = { type: "text"; text: string };
@@ -182,19 +219,25 @@ function requestBody(model: string, messages: Msg[], opts: CallOpts) {
     // Keep thinking short and out of the response; brevity is enforced by
     // the prompts, not by starving the model of tokens. On the paid flash
     // models this is also the difference between a 1s and an 8s reply.
-    reasoning: { effort: "low", exclude: true },
+    // OpenRouter-only: other providers reject the field rather than ignore it.
+    ...(IS_OPENROUTER ? { reasoning: { effort: "low", exclude: true } } : {}),
     ...(opts.stream ? { stream: true } : {}),
     ...(opts.json ? { response_format: { type: "json_object" } } : {}),
   });
 }
 
-function headers() {
+function headers(): Record<string, string> {
   return {
-    Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    Authorization: `Bearer ${apiKey()}`,
     "Content-Type": "application/json",
-    // OpenRouter uses these for attribution.
-    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://mintai-three.vercel.app",
-    "X-Title": "Tutor Mint",
+    // Attribution, and OpenRouter-only.
+    ...(IS_OPENROUTER
+      ? {
+          "HTTP-Referer":
+            process.env.NEXT_PUBLIC_SITE_URL || "https://mintai-three.vercel.app",
+          "X-Title": "Tutor Mint",
+        }
+      : {}),
   };
 }
 
@@ -238,11 +281,15 @@ export async function complete(
     deadline?: number;
   } = {},
 ): Promise<{ text: string; model: string }> {
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new TutorError("OPENROUTER_API_KEY is not set on the server.", 500);
+  if (!apiKey()) {
+    throw new TutorError(
+      "No model API key is set on the server (OPENROUTER_API_KEY or NVIDIA_API_KEY).",
+      500,
+    );
   }
 
   const models = modelChain(Boolean(opts.vision));
+  if (!models.length) throw noModels(Boolean(opts.vision));
 
   const settings = {
     maxTokens: opts.maxTokens ?? 1600,
@@ -298,11 +345,16 @@ export async function* stream(
     deadline?: number;
   } = {},
 ): AsyncGenerator<string, void, unknown> {
-  if (!process.env.OPENROUTER_API_KEY) {
-    throw new TutorError("OPENROUTER_API_KEY is not set on the server.", 500);
+  if (!apiKey()) {
+    throw new TutorError(
+      "No model API key is set on the server (OPENROUTER_API_KEY or NVIDIA_API_KEY).",
+      500,
+    );
   }
 
   const models = modelChain(Boolean(opts.vision));
+  if (!models.length) throw noModels(Boolean(opts.vision));
+
   const settings = {
     maxTokens: opts.maxTokens ?? 1600,
     temperature: opts.temperature ?? 0.55,

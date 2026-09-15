@@ -205,8 +205,11 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
+          // A 500 from the client layer is always a server misconfiguration —
+          // a missing key, or a provider with no model chain. Neither is
+          // something the student can fix by retrying, so say so.
           status === 500
-            ? "The server is missing its API key."
+            ? "Tutoring isn't configured on this deployment yet."
             : "Couldn't reach a tutor model just now. Your work is still here — tap Retry.",
         detail: e.message,
       },

@@ -11,7 +11,13 @@ export const dynamic = "force-dynamic";
  * they are shaped — never the values themselves.
  */
 export async function GET(req: Request) {
-  const key = process.env.OPENROUTER_API_KEY ?? "";
+  // Either provider's key counts. Reporting "add OPENROUTER_API_KEY" when
+  // NVIDIA_API_KEY is the one configured sends you to fix the wrong thing.
+  const orKey = process.env.OPENROUTER_API_KEY ?? "";
+  const nvKey = process.env.NVIDIA_API_KEY ?? "";
+  const key = orKey || nvKey;
+  const provider = orKey ? "openrouter" : nvKey ? "nvidia" : null;
+  const shapeOk = orKey ? orKey.startsWith("sk-or-") : nvKey.startsWith("nvapi-");
 
   // Which commit this deployment is actually running. Vercel injects these at
   // build time. Without them a stale deployment is indistinguishable from a
@@ -26,13 +32,14 @@ export async function GET(req: Request) {
   const checks = {
     build,
     tutor: {
+      provider,
       openrouter_key_set: Boolean(key),
-      key_looks_right: key.startsWith("sk-or-"),
+      key_looks_right: shapeOk,
       status: key
-        ? key.startsWith("sk-or-")
+        ? shapeOk
           ? "ready"
-          : "key is set but does not look like an OpenRouter key"
-        : "MISSING — Scan, Chat and Voice will not work. Add OPENROUTER_API_KEY.",
+          : `key is set but does not look like a ${provider} key`
+        : "MISSING — Scan, Chat and Voice will not work. Set OPENROUTER_API_KEY or NVIDIA_API_KEY.",
     },
     accounts: {
       configured: CLOUD_ENABLED,
