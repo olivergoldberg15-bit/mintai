@@ -117,11 +117,16 @@ export async function POST(req: Request) {
       });
     }
 
+    // Which model won the chain. Captured here and sent down the stream so a
+    // silent fall-through to the slow free tail is visible rather than just felt.
+    let served: string | null = null;
+
     const source = stream(messages, {
       vision: hasImage,
       maxTokens,
       temperature: 0.6,
       deadline,
+      onModel: (m) => { served = m; },
     });
 
     // Pull the first chunk here, before committing to a 200. Everything that
@@ -167,6 +172,7 @@ export async function POST(req: Request) {
         };
 
         try {
+          if (served) controller.enqueue(event({ t: "model", model: served }));
           drain(first.value);
           for await (const chunk of source) drain(chunk);
 

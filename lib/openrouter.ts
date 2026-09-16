@@ -343,6 +343,14 @@ export async function* stream(
     maxTokens?: number;
     temperature?: number;
     deadline?: number;
+    /**
+     * Fires with the model that actually answered, the moment it does.
+     *
+     * Worth having: without it a reply that quietly fell through to the slow
+     * free tail is indistinguishable from one served by the fast paid model at
+     * the top, and the only symptom is that the app "feels slow again".
+     */
+    onModel?: (model: string) => void;
   } = {},
 ): AsyncGenerator<string, void, unknown> {
   if (!apiKey()) {
@@ -402,6 +410,7 @@ export async function* stream(
         if (!started) {
           started = true;
           clearTimeout(firstToken);
+          opts.onModel?.(model);
         }
         yield delta;
       }

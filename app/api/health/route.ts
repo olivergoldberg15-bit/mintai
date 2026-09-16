@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CLOUD_ENABLED, SUPABASE_FROM_ENV, SUPABASE_URL } from "@/lib/config";
-import { modelChain } from "@/lib/openrouter";
+import { modelChain, complete } from "@/lib/openrouter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,8 +80,37 @@ export async function GET(req: Request) {
   // still lack the text_to_speech scope, which reads as "ready" here but
   // fails on every actual request. ?probe=1 spends a few characters of quota
   // to find out for certain.
+  const wantProbe = new URL(req.url).searchParams.get("probe");
+
+  // Which model ACTUALLY answers, and how fast.
+  //
+  // "The key is set" and "a fast model replies" are different claims, and the
+  // gap between them is the whole difference between a one-second reply and a
+  // twenty-second one. With no credit on the account every paid model returns
+  // 402, the chain silently falls through to the free tail, and the only
+  // symptom is that the app feels slow. This spends one tiny call to say so.
+  let tutorProbe: Record<string, unknown> | null = null;
+  if (wantProbe && key) {
+    const started = Date.now();
+    try {
+      const r = await complete([{ role: "user", content: "Say OK." }], { maxTokens: 8 });
+      const free = r.model.endsWith(":free");
+      tutorProbe = {
+        ok: true,
+        answered_by: r.model,
+        ms: Date.now() - started,
+        tier: free ? "FREE" : "paid",
+        verdict: free
+          ? "Fell through to a free model — the paid ones were refused. Almost always means the account has no credit, which is why replies are slow."
+          : "A paid model answered. This is the fast path.",
+      };
+    } catch (e) {
+      tutorProbe = { ok: false, error: (e as Error).message };
+    }
+  }
+
   let probe: Record<string, unknown> | null = null;
-  if (new URL(req.url).searchParams.get("probe") && process.env.ELEVENLABS_API_KEY) {
+  if (wantProbe && process.env.ELEVENLABS_API_KEY) {
     try {
       const r = await fetch(
         "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL?output_format=mp3_44100_128",
@@ -122,8 +151,9 @@ export async function GET(req: Request) {
       ok,
       summary: ok ? "Tutoring is configured." : "Tutoring is NOT configured.",
       checks,
+      ...(tutorProbe ? { tutor_probe: tutorProbe } : {}),
       ...(probe ? { voice_probe: probe } : {}),
-      hint: "Add ?probe=1 to test the ElevenLabs key for real.",
+      hint: "Add ?probe=1 to find out which model really answers, and how fast.",
     },
     { status: 200 },
   );

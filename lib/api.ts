@@ -48,6 +48,7 @@ function platformError(status: number, ok: boolean): string {
 
 /** What the tutor route sends down the wire, one JSON object per line. */
 export type TutorEvent =
+  | { t: "model"; model: string }
   | { t: "problem"; subject: string; problem: string }
   | { t: "d"; v: string }
   | { t: "error"; error: string }
